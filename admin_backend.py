@@ -179,8 +179,84 @@ def _init_db(path: str) -> sqlite3.Connection:
             ("general", "DAVAI Academic Assistant", "You are DAVAI, a helpful academic study assistant for high school and university students. Help with any subject, explain concepts clearly, assist with study techniques, and support student learning.")
         ])
 
+    # Seed sample students, homework, payments, announcements if empty
+    has_u = con.execute("SELECT COUNT(*) as n FROM users").fetchone()["n"]
+    if has_u == 0:
+        _seed_demo_data(con)
+
     con.commit()
     return con
+
+def _seed_demo_data(con):
+    try:
+        students = [
+            ("s_aisha", "Aisha Mammadova", "aisha@test.davai", "pro", "IB", "Baku European Lyceum"),
+            ("s_kamran", "Kamran Huseynov", "kamran@test.davai", "free", "IELTS", "TISA International School"),
+            ("s_leyla", "Leyla Aliyeva", "leyla@test.davai", "pro_max", "IB", "Baku Oxford School"),
+            ("s_tural", "Tural Hasanov", "tural@test.davai", "free", "SAT & YKS", "Anadolu Lisesi"),
+            ("s_sara", "Sara Rzayeva", "sara@test.davai", "pro", "IELTS", "ADA School")
+        ]
+        for sid, name, email, plan, prog, sch in students:
+            con.execute(
+                "INSERT OR IGNORE INTO users (id, name, email, password, plan, program, school) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (sid, name, email, "Pass12345!", plan, prog, sch)
+            )
+
+        homeworks = [
+            ("hw_1", "s_aisha", "IB TOK Essay — Final Draft Submission", "Theory of Knowledge", "2026-11-20", "pending", "high", "Draft review with IB supervisor"),
+            ("hw_2", "s_aisha", "Physics HL — Electromagnetic Induction Lab", "Physics", "2026-11-18", "pending", "high", "Format data tables and error propagation"),
+            ("hw_3", "s_kamran", "IELTS Academic Writing Task 2", "English", "2026-11-15", "pending", "medium", "Discuss both views & give opinion essay"),
+            ("hw_4", "s_kamran", "IELTS Listening Practice Test 3", "English", "2026-11-14", "done", "medium", "Check Cambridge 18 Section 4 answers"),
+            ("hw_5", "s_leyla", "Math AA HL — Calculus Paper 2", "Mathematics", "2026-11-16", "pending", "high", "Differential equations and Maclaurin series"),
+            ("hw_6", "s_leyla", "Chemistry HL — Organic Mechanisms", "Chemistry", "2026-11-17", "pending", "medium", "Nucleophilic substitution & elimination"),
+            ("hw_7", "s_tural", "SAT Digital Practice Exam 4 — Math Module", "Mathematics", "2026-11-19", "pending", "medium", "Bluebook app timed section"),
+            ("hw_8", "s_sara", "IELTS Speaking Part 2 & 3 Cue Card", "English", "2026-11-13", "overdue", "high", "Record 2 min monologue on technology")
+        ]
+        for hid, uid, title, subj, due, st, pri, note in homeworks:
+            con.execute(
+                "INSERT OR IGNORE INTO homework (id, user_id, title, subject, due_date, status, priority, notes) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (hid, uid, title, subj, due, st, pri, note)
+            )
+
+        payments = [
+            ("pay_1", "s_kamran", "pro", "Kamran Huseynov", "KB-882910", "pending"),
+            ("pay_2", "s_tural", "pro_max", "Tural Hasanov", "MPAY-44102", "pending"),
+            ("pay_3", "s_aisha", "pro", "Aisha Mammadova", "LEO-129481", "approved")
+        ]
+        for pid, uid, pl, sname, sref, st in payments:
+            con.execute(
+                "INSERT OR IGNORE INTO payments (id, user_id, plan_id, sender_name, sender_ref, status) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (pid, uid, pl, sname, sref, st)
+            )
+
+        announcements = [
+            ("ann_welcome", "Hoş Geldiniz — DAVAI Mobil Sürüm Yayında! 🎉", "IB, SAT ve YKS sınav hazırlıklarında yapay zeka çalışma koçunuz 7/24 yanınızda.", "success", 1),
+            ("ann_exam", "Kasım 2026 Deneme Sınav Takvimi 📅", "Matematik ve Fen bilimleri denemelerine katılmayı unutmayın. Sürelerinizi takip edin.", "info", 1)
+        ]
+        for aid, title, msg, atype, act in announcements:
+            con.execute(
+                "INSERT OR IGNORE INTO announcements (id, title, message, type, active) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (aid, title, msg, atype, act)
+            )
+
+        codes = [
+            ("c_1", "DAVAI-PRO-A1B2", "pro"),
+            ("c_2", "DAVAI-PRO-C3D4", "pro"),
+            ("c_3", "DAVAI-PROMAX-E5F6", "pro_max")
+        ]
+        for cid, code, pl in codes:
+            con.execute(
+                "INSERT OR IGNORE INTO pro_codes (id, code, plan) VALUES (?, ?, ?)",
+                (cid, code, pl)
+            )
+
+        con.commit()
+    except Exception as ex:
+        print(f"[seed] Note: {ex}")
 
 _CON = None
 def db() -> sqlite3.Connection:
@@ -303,6 +379,10 @@ def handle(method: str, path: str, body: dict, token: str) -> tuple:
     if path == "/admin/api/stats" and method == "GET":
         return _stats()
 
+    if path == "/admin/api/seed" and method == "POST":
+        _seed_demo_data(db())
+        return 200, {"ok": True, "message": "Demo data populated successfully."}
+
     # Users
     if path == "/admin/api/users" and method == "GET":
         return _users_list()
@@ -316,6 +396,8 @@ def handle(method: str, path: str, body: dict, token: str) -> tuple:
     # Homework (Integrated with Mobile App)
     if path == "/admin/api/homework" and method == "GET":
         return _homework_list(body)
+    if path == "/admin/api/homework" and method == "POST":
+        return _homework_create(body)
     if re.match(r"^/admin/api/homework/[\w-]+$", path):
         hid = path.split("/")[-1]
         if method == "PATCH":  return _homework_update(hid, body)
@@ -589,6 +671,26 @@ def _homework_list(body):
     query += " ORDER BY h.due_date ASC, h.created_at DESC"
     rows = [dict(r) for r in db().execute(query, tuple(args)).fetchall()]
     return 200, rows
+
+def _homework_create(body):
+    user_id = body.get("user_id") or ""
+    title = (body.get("title") or "").strip()
+    subject = (body.get("subject") or "").strip()
+    due_date = body.get("due_date") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    status = body.get("status") or "pending"
+    priority = body.get("priority") or "medium"
+    notes = body.get("notes") or ""
+    if not title or not subject:
+        return 400, {"message": "Title and subject are required."}
+    hid = secrets.token_urlsafe(16)
+    now = datetime.now(timezone.utc).isoformat()
+    db().execute(
+        "INSERT INTO homework (id, user_id, title, subject, due_date, status, priority, notes, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (hid, user_id, title, subject, due_date, status, priority, notes, now, now)
+    )
+    db().commit()
+    return 201, {"ok": True, "id": hid}
 
 def _homework_update(hid, body):
     row = db().execute("SELECT * FROM homework WHERE id=?", (hid,)).fetchone()

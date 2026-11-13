@@ -722,11 +722,29 @@
               <table class="simple-table">
                 <tbody>
                   <tr><td style="color:#71717a">Node Mobile Backend</td><td id="sys-node-status">—</td></tr>
-                  <tr><td style="color:#71717a">Python Web & Admin Server</td><td>Online (:5050)</td></tr>
+                  <tr><td style="color:#71717a">Python Web & Admin Server</td><td>Online (:4320 / :3000)</td></tr>
                   <tr><td style="color:#71717a">Shared SQLite Database</td><td id="sys-db-status">—</td></tr>
                   <tr><td style="color:#71717a">AI Provider Status</td><td id="sys-ai-status">—</td></tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Management & Demo Seeding -->
+        <div class="col-12">
+          <div class="section-card">
+            <div class="section-head">
+              <div>
+                <h2>Database Sample & Demo Data</h2>
+                <div style="font-size:.72rem;color:#71717a">Quickly populate initial students, homework tasks, payments and announcements</div>
+              </div>
+              <button class="btn-sm-white" onclick="seedDemoData()"><i class="bi bi-database-fill-gear"></i> Populate Sample Data</button>
+            </div>
+            <div class="p-3">
+              <p style="font-size:.82rem;color:#a1a1aa;margin:0">
+                Populates standard demo students (IB, SAT, IELTS), active homework tasks, pending bank payments, and mobile announcements into the live database.
+              </p>
             </div>
           </div>
         </div>
@@ -1439,6 +1457,17 @@ async function loadLogs() {
     ...DT_DEFAULTS,
     data: rows,
   });
+}
+
+async function seedDemoData() {
+  if (!confirm('Populate standard demo students, homework, payments, and announcements?')) return;
+  const res = await api('POST', '/admin/api/seed');
+  if (res.ok) {
+    toast('Demo data populated successfully!');
+    loadDashboard();
+  } else {
+    toast('Failed to populate demo data.');
+  }
 }
 
 // ── Common Helpers ────────────────────────────────────────────

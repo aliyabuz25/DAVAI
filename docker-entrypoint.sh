@@ -6,6 +6,12 @@ echo "[DAVAI] Initializing production container..."
 # Ensure persistent mount directories exist
 mkdir -p /app/data /app/uploads
 
+# If persistent SQLite DB does not exist, seed initial database
+if [ ! -f "/app/data/davai.db" ] && [ -f "/app/davai-mobile/backend/data/davai.db" ]; then
+  echo "[DAVAI] Seeding initial database to /app/data/davai.db..."
+  cp /app/davai-mobile/backend/data/davai.db /app/data/davai.db
+fi
+
 # Ensure SQLite file has write access
 if [ -f "/app/data/davai.db" ]; then
   chmod 666 /app/data/davai.db* 2>/dev/null || true
