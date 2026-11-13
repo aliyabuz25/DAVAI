@@ -7,8 +7,8 @@ services:
     image: davai-backend:latest
     pull_policy: build
     restart: unless-stopped
-    ports:
-      - "4320:4320"
+    expose:
+      - "4320"
     environment:
       PORT: "4320"
       NODE_ENV: "production"
