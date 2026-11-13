@@ -1,0 +1,37 @@
+FROM node:22-bookworm-slim
+
+# Install system dependencies: Python 3, curl, sqlite3
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    curl \
+    sqlite3 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Node dependencies for mobile backend first (cached layer)
+COPY davai-mobile/backend/package*.json ./davai-mobile/backend/
+WORKDIR /app/davai-mobile/backend
+RUN npm ci --omit=dev || npm install --omit=dev
+
+WORKDIR /app
+
+# Copy full application codebase
+COPY . .
+
+# Setup directories and permissions
+RUN mkdir -p /app/data /app/uploads \
+    && chmod +x /app/docker-entrypoint.sh \
+    && chmod +x /app/start_server.sh 2>/dev/null || true
+
+# Production Environment Defaults
+ENV NODE_ENV=production \
+    PORT=4320 \
+    HOST=0.0.0.0 \
+    DAVAI_DB_PATH=/app/data/davai.db \
+    DATA_DIR=/app/data
+
+EXPOSE 4320
+
+ENTRYPOINT ["/bin/sh", "/app/docker-entrypoint.sh"]

@@ -40,10 +40,10 @@ app.use((err, req, res, next) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.NODE_PORT || 3000;
 app.listen(PORT, () => {
   console.log(`DAVAI backend running on http://localhost:${PORT}`);
-  console.log(`  DB: ${path.join(__dirname, 'data/davai.db')}`);
+  console.log(`  DB: ${process.env.DAVAI_DB_PATH || path.join(__dirname, 'data/davai.db')}`);
   console.log(`  AI: ${process.env.ANTHROPIC_API_KEY ? 'configured' : 'NOT SET — chat will return 503'}`);
 });
 

@@ -1,0 +1,36 @@
+services:
+  davai-backend:
+    container_name: davai-backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: davai-backend:latest
+    pull_policy: build
+    restart: unless-stopped
+    ports:
+      - "4320:4320"
+    environment:
+      PORT: "4320"
+      NODE_ENV: "production"
+      JWT_SECRET: "change_this_to_a_long_random_secret_min_32_chars"
+      SITE_URL: "https://davai.tech"
+      ALLOWED_ORIGINS: "https://davai.tech,https://www.davai.tech,http://davai.tech,http://www.davai.tech"
+    volumes:
+      - /datastore/davai/uploads:/app/uploads
+      - /datastore/davai/data:/app/data
+    networks:
+      - edge
+      - octobot-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=edge"
+      - "traefik.http.routers.davai.rule=Host(`davai.tech`) || Host(`www.davai.tech`)"
+      - "traefik.http.routers.davai.entrypoints=web,websecure"
+      - "traefik.http.routers.davai.tls=true"
+      - "traefik.http.services.davai.loadbalancer.server.port=4320"
+
+networks:
+  edge:
+    external: true
+  octobot-net:
+    external: true

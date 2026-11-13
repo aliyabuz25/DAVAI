@@ -69,6 +69,19 @@ if _up.startswith("http://127.0.0.1:") or (_up.startswith("https://") and " " no
 
 MAX_BODY = 3_000_000     # bytes; one resized photo plus text fits easily
 
+# ── Node.js Mobile Backend Integration ───────────────────────────
+NODE_URL = os.environ.get("DAVAI_NODE_URL", "http://127.0.0.1:3000").rstrip("/")
+
+def _is_node_route(path):
+    p = path.split("?")[0]
+    return (
+        p == "/auth" or p.startswith("/auth/") or
+        p == "/homework" or p.startswith("/homework/") or
+        p == "/chat" or p.startswith("/chat/") or
+        p == "/payment" or p.startswith("/payment/") or
+        p == "/config" or p.startswith("/config/")
+    )
+
 # ── Accounts (Supabase) ──────────────────────────────────────────
 # SUPABASE_URL      e.g. https://abcdefgh.supabase.co
 # SUPABASE_ANON_KEY the public "anon" key (used to check logins)
@@ -336,8 +349,8 @@ def refund(info):
                 d[k].remove(t)
 
 CORS_HEADERS = {
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-DAVAI-Device, X-DAVAI-Plan",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PATCH, DELETE, PUT",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-DAVAI-Device, X-DAVAI-Plan, X-Admin-Token",
     "Access-Control-Expose-Headers": "X-DAVAI-Plan, X-DAVAI-Limit, X-DAVAI-Remaining",
     "Access-Control-Max-Age": "600",
 }
@@ -639,17 +652,63 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
-    # ── PATCH / DELETE → admin API only ─────────────────────────────
+    # ── Forward to Node.js Mobile Backend ───────────────────────────
+    def _forward_to_node(self, method):
+        node_url = f"{NODE_URL}{self.path}"
+        try:
+            length = int(self.headers.get("Content-Length", "0") or "0")
+            body = self.rfile.read(length) if length > 0 else None
+            headers = {}
+            for k, v in self.headers.items():
+                if k.lower() not in ("host", "content-length"):
+                    headers[k] = v
+            req = urllib.request.Request(node_url, data=body, headers=headers, method=method)
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                resp_data = resp.read()
+                self.send_response(resp.status)
+                for hk, hv in resp.getheaders():
+                    if hk.lower() not in ("transfer-encoding", "content-length", "access-control-allow-origin", "access-control-allow-headers", "access-control-allow-methods", "access-control-allow-credentials"):
+                        self.send_header(hk, hv)
+                self.send_header("Content-Length", str(len(resp_data)))
+                self.send_cors()
+                self.end_headers()
+                self.wfile.write(resp_data)
+        except urllib.error.HTTPError as e:
+            err_data = e.read()
+            self.send_response(e.code)
+            for hk, hv in e.headers.items():
+                if hk.lower() not in ("transfer-encoding", "content-length", "access-control-allow-origin", "access-control-allow-headers", "access-control-allow-methods", "access-control-allow-credentials"):
+                    self.send_header(hk, hv)
+            self.send_header("Content-Length", str(len(err_data)))
+            self.send_cors()
+            self.end_headers()
+            self.wfile.write(err_data)
+        except Exception as ex:
+            self._json(502, {"error": f"Node backend unreachable: {str(ex)}"})
+
+    # ── PATCH / DELETE / PUT ─────────────────────────────────────────
     def do_PATCH(self):
         path = self.path.split("?")[0]
+        if _is_node_route(path):
+            return self._forward_to_node("PATCH")
         if path.startswith("/admin/api/"):
             return self._admin_api("PATCH")
         self._forbidden()
 
     def do_DELETE(self):
         path = self.path.split("?")[0]
+        if _is_node_route(path):
+            return self._forward_to_node("DELETE")
         if path.startswith("/admin/api/"):
             return self._admin_api("DELETE")
+        self._forbidden()
+
+    def do_PUT(self):
+        path = self.path.split("?")[0]
+        if _is_node_route(path):
+            return self._forward_to_node("PUT")
+        if path.startswith("/admin/api/"):
+            return self._admin_api("PUT")
         self._forbidden()
 
     # ── Admin API dispatcher ─────────────────────────────────────────
@@ -698,6 +757,10 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         import subprocess, json as _json
         ip = self.client_ip()
+
+        # ── Mobile backend routes ────────────────────────────────────
+        if _is_node_route(self.path):
+            return self._forward_to_node("POST")
 
         # ── Admin API (POST/PATCH/DELETE) ────────────────────────────
         if self.path.split("?")[0].startswith("/admin/api/"):
@@ -942,6 +1005,10 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
     # ── GET → serve static files ─────────────────────────────────────
     def do_GET(self):
         path = self.path.split("?")[0]
+
+        # ── Mobile backend routes ────────────────────────────────────
+        if _is_node_route(path):
+            return self._forward_to_node("GET")
 
         # ── Admin setup-status (public GET) ─────────────────────────
         if path == "/admin/api/setup-status":
