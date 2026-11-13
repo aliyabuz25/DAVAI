@@ -12,9 +12,27 @@ ion-toolbar { --background: var(--bg-primary); --border-width: 0; }
   font-size: 0.72rem; font-weight: 700; color: var(--text-primary);
 }
 
-.greeting-block { padding: 12px 16px 16px; }
+.greeting-block { padding: 12px 16px 14px; }
 .greeting-sub  { font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 2px; }
 .greeting-name { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.03em; margin: 0; }
+
+// ── Announcement Banner ──────────────────────────────────────
+.announcement-banner {
+  margin: 0 16px 14px; padding: 12px 14px; border-radius: 12px;
+  background: rgba(59, 130, 246, 0.12); border: 0.5px solid rgba(59, 130, 246, 0.25);
+  display: flex; align-items: flex-start; gap: 10px;
+  &.type-warning { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3); .ann-icon ion-icon { color: #f59e0b; } }
+  &.type-success { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.3); .ann-icon ion-icon { color: #22c55e; } }
+  .ann-icon { flex-shrink: 0; margin-top: 1px; ion-icon { font-size: 1.15rem; color: #3b82f6; } }
+  .ann-content { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .ann-title { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); }
+  .ann-msg { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; }
+  .ann-close {
+    background: none; border: none; padding: 2px; color: var(--text-tertiary);
+    cursor: pointer; ion-icon { font-size: 1.1rem; }
+    &:active { opacity: 0.6; }
+  }
+}
 
 // ── Stats ────────────────────────────────────────────────────
 .stats-row { display: flex; gap: 8px; padding: 0 16px 4px; }

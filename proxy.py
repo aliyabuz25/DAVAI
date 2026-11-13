@@ -968,9 +968,9 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
 
         if path.startswith("/admin/api/"):
             token = self.headers.get("X-Admin-Token","")
-            # parse query string into body-like dict (for filters, etc.)
+            # parse query string into body-like dict
             qs    = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-            body  = {k: v[0] for k,v in qs.items()}
+            body  = {k: v[0] for k, v in qs.items()}
             status, resp = _admin.handle("GET", path, body, token)
             self._json(status, resp); return
 

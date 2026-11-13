@@ -26,6 +26,22 @@ function safeUser(row) {
   };
 }
 
+// GET /payment/recipient-info — dynamic bank recipient details for mobile app
+router.get('/recipient-info', (req, res) => {
+  const rows = db.prepare('SELECT key, value FROM payment_settings').all();
+  const cfg = {};
+  for (const r of rows) cfg[r.key] = r.value;
+
+  return res.json({
+    name:     cfg.recipient_name || 'David Salahov',
+    bank:     cfg.bank_name      || 'Kapital Bank',
+    card:     cfg.card_number    || '4169 7388 1234 5678',
+    iban:     cfg.iban           || 'AZ21 AIIB 0000 0000 1234 5678 901',
+    currency: cfg.currency       || 'AZN',
+    note:     cfg.note_prefix    || 'DAVAI Pro — ',
+  });
+});
+
 // POST /payment/submit — no auth required (guest can pay too)
 router.post('/submit', (req, res) => {
   const { planId, senderName, senderRef, userId } = req.body;
@@ -98,26 +114,6 @@ router.get('/status/:id', (req, res) => {
 router.get('/user/:userId', (req, res) => {
   const rows = db.prepare('SELECT * FROM payments WHERE user_id = ? ORDER BY created_at DESC').all(req.params.userId);
   return res.json(rows);
-});
-
-// POST /payment/approve/:id — admin only (protected by secret header)
-router.post('/approve/:id', (req, res) => {
-  const secret = req.headers['x-admin-secret'];
-  if (secret !== (process.env.ADMIN_SECRET || 'davai-admin')) {
-    return res.status(403).json({ message: 'Forbidden.' });
-  }
-
-  const payment = db.prepare('SELECT * FROM payments WHERE id = ?').get(req.params.id);
-  if (!payment) return res.status(404).json({ message: 'Payment not found.' });
-
-  db.prepare("UPDATE payments SET status = 'approved' WHERE id = ?").run(req.params.id);
-
-  // If we have a user_id, upgrade their plan
-  if (payment.user_id) {
-    db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(payment.plan_id, payment.user_id);
-  }
-
-  return res.json({ ok: true });
 });
 
 module.exports = router;

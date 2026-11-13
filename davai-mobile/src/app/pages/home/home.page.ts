@@ -1,6 +1,7 @@
-import { Component, computed } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import {
   IonContent, IonHeader, IonToolbar,
   IonRefresher, IonRefresherContent, IonIcon,
@@ -11,10 +12,20 @@ import {
   chevronForward, checkmarkCircleOutline,
   timerOutline, textOutline, listOutline, radioOutline,
   sparklesOutline, bookOutline, pencilOutline, documentTextOutline, flashOutline,
+  bulbOutline, closeOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { HomeworkService } from '../../services/homework.service';
 import { ChatService, CHAT_MODES } from '../../services/chat.service';
+import { environment } from '../../../environments/environment';
+
+export interface Announcement {
+  active: boolean;
+  id?: string;
+  title?: string;
+  message?: string;
+  type?: 'info' | 'warning' | 'success';
+}
 
 @Component({
   selector: 'app-home',
@@ -33,6 +44,8 @@ export class HomePage {
   readonly planLabel = this.auth.planLabel;
   chatModes          = CHAT_MODES;
 
+  announcement = signal<Announcement | null>(null);
+
   greeting = computed(() => {
     const h = new Date().getHours();
     if (h < 12) return 'Good morning';
@@ -47,16 +60,42 @@ export class HomePage {
     private auth: AuthService,
     private chat: ChatService,
     private router: Router,
+    private http: HttpClient,
   ) {
     addIcons({
       calendarOutline, warningOutline, layersOutline,
       chevronForward, checkmarkCircleOutline,
       timerOutline, textOutline, listOutline, radioOutline,
       sparklesOutline, bookOutline, pencilOutline, documentTextOutline, flashOutline,
+      bulbOutline, closeOutline,
+    });
+
+    this.fetchAnnouncement();
+  }
+
+  fetchAnnouncement(): void {
+    this.http.get<Announcement>(`${environment.apiUrl}/config/announcement`).subscribe({
+      next: (data) => {
+        if (data && data.active && data.title) {
+          this.announcement.set(data);
+        } else {
+          this.announcement.set(null);
+        }
+      },
+      error: () => this.announcement.set(null),
     });
   }
 
-  refresh(event: any): void { setTimeout(() => event.target.complete(), 600); }
+  dismissAnnouncement(): void {
+    this.announcement.set(null);
+  }
+
+  refresh(event: any): void {
+    this.fetchAnnouncement();
+    this.hw.syncFromServer().finally(() => {
+      setTimeout(() => event.target.complete(), 400);
+    });
+  }
 
   goToChat(modeId: string): void {
     this.chat.setMode(modeId as any);

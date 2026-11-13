@@ -34,8 +34,8 @@ const PLANS: Plan[] = [
 export class PaymentPage {
   plan: Plan = PLANS[0];
 
-  // Alıcı bilgileri — gerçek kartı buraya yaz
-  readonly recipient = {
+  // Alıcı bilgileri — sunucudan dinamik yüklenir, çevrimdışı için yerel yedekli
+  recipient = {
     name:     'David Salahov',
     bank:     'Kapital Bank',
     card:     '4169 7388 1234 5678',
@@ -62,6 +62,23 @@ export class PaymentPage {
 
     const planId = this.route.snapshot.queryParamMap.get('plan') ?? 'pro';
     this.plan = PLANS.find(p => p.id === planId) ?? PLANS[0];
+
+    // Sunucudan güncel banka bilgilerini dinamik al
+    this.http.get<any>(`${environment.apiUrl}/payment/recipient-info`).subscribe({
+      next: (info) => {
+        if (info && info.card) {
+          this.recipient = {
+            name:     info.name     || this.recipient.name,
+            bank:     info.bank     || this.recipient.bank,
+            card:     info.card     || this.recipient.card,
+            iban:     info.iban     || this.recipient.iban,
+            currency: info.currency || this.recipient.currency,
+            note:     info.note     || this.recipient.note,
+          };
+        }
+      },
+      error: () => {}
+    });
   }
 
   async copy(text: string, label: string): Promise<void> {

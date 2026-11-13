@@ -18,6 +18,7 @@ app.use('/auth',     require('./routes/auth'));
 app.use('/homework', require('./routes/homework'));
 app.use('/chat',     require('./routes/chat'));
 app.use('/payment',  require('./routes/payment'));
+app.use('/config',   require('./routes/config'));
 
 // ── Health check ──────────────────────────────────────────────
 app.get('/health', (req, res) => {

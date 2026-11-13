@@ -21,6 +21,20 @@
     <h1 class="greeting-name">{{ user()?.name?.split(' ')[0] ?? 'Student' }}</h1>
   </div>
 
+  <!-- Announcement Banner from Admin -->
+  <div class="announcement-banner" *ngIf="announcement() as ann" [class]="'type-' + ann.type">
+    <div class="ann-icon">
+      <ion-icon [name]="ann.type === 'warning' ? 'warning-outline' : ann.type === 'success' ? 'sparkles-outline' : 'bulb-outline'"></ion-icon>
+    </div>
+    <div class="ann-content">
+      <span class="ann-title">{{ ann.title }}</span>
+      <span class="ann-msg">{{ ann.message }}</span>
+    </div>
+    <button class="ann-close" (click)="dismissAnnouncement()">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+  </div>
+
   <!-- Stats row -->
   <div class="stats-row">
     <div class="stat-tile" (click)="goToHomework()">
