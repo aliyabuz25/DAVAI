@@ -1,0 +1,71 @@
+<ion-content class="auth-content" [scrollY]="true">
+  <div class="auth-wrap">
+
+    <button class="back-btn" (click)="goBack()">
+      <ion-icon name="chevron-back"></ion-icon>
+    </button>
+
+    <div class="auth-brand">
+      <span class="brand-wordmark">DAVAI</span>
+    </div>
+
+    <div class="auth-head">
+      <h1>Welcome back</h1>
+      <p>Sign in to your DAVAI account</p>
+    </div>
+
+    <div class="error-box" *ngIf="error()">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <span>{{ error() }}</span>
+    </div>
+
+    <div class="form-group">
+      <label>Email</label>
+      <div class="input-wrap" [class.focused]="emailFocused">
+        <ion-icon name="mail-outline"></ion-icon>
+        <input
+          type="email"
+          placeholder="you@school.edu"
+          [(ngModel)]="email"
+          (focus)="emailFocused=true"
+          (blur)="emailFocused=false"
+          autocomplete="email"
+          inputmode="email"
+        />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Password</label>
+      <div class="input-wrap" [class.focused]="pwFocused">
+        <ion-icon name="lock-closed-outline"></ion-icon>
+        <input
+          [type]="showPw ? 'text' : 'password'"
+          placeholder="Password"
+          [(ngModel)]="password"
+          (focus)="pwFocused=true"
+          (blur)="pwFocused=false"
+          autocomplete="current-password"
+        />
+        <button class="eye-btn" (click)="togglePw()">
+          <ion-icon [name]="showPw ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <button class="btn-primary" (click)="submit()" [disabled]="loading()">
+      <ion-spinner *ngIf="loading()" name="crescent"></ion-spinner>
+      <span *ngIf="!loading()">Sign In</span>
+    </button>
+
+    <div class="divider"><span>or</span></div>
+
+    <button class="btn-secondary" (click)="continueAsGuest()">Continue as Guest</button>
+
+    <div class="auth-foot">
+      <span>No account?</span>
+      <button (click)="goToRegister()">Create one free</button>
+    </div>
+
+  </div>
+</ion-content>

@@ -1,0 +1,55 @@
+<ion-content [scrollY]="false" class="onboarding-content">
+
+  <!-- Slides — top portion -->
+  <div class="slides-wrap">
+    <div class="slide"
+         *ngFor="let slide of slides; let i = index"
+         [class.active]="i === currentSlide"
+         [class.prev]="i < currentSlide"
+         [class.next]="i > currentSlide">
+
+      <!-- 3D Emoji Icon -->
+      <div class="slide-emoji">
+        <img [src]="slide.emoji3d" [alt]="slide.title" draggable="false"/>
+      </div>
+
+      <!-- Logo -->
+      <span class="brand-wordmark">DAVAI</span>
+
+      <div class="slide-text">
+        <h1>{{ slide.title }}</h1>
+        <p>{{ slide.subtitle }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom fixed area -->
+  <div class="bottom-area">
+
+    <!-- Dots -->
+    <div class="dots-row">
+      <span class="dot"
+            *ngFor="let s of slides; let i = index"
+            [class.active]="i === currentSlide"
+            (click)="goTo(i)">
+      </span>
+    </div>
+
+    <!-- Last slide: CTA -->
+    <div class="cta-block" *ngIf="isLast">
+      <button class="btn-primary" (click)="goToRegister()">Create Free Account</button>
+      <button class="btn-secondary" (click)="goToLogin()">Sign In</button>
+      <button class="btn-ghost" (click)="continueAsGuest()">Continue as Guest</button>
+    </div>
+
+    <!-- Not last: nav row -->
+    <div class="nav-row" *ngIf="!isLast">
+      <button class="btn-ghost" (click)="currentSlide = slides.length - 1">Skip</button>
+      <button class="btn-next" (click)="next()">
+        <ion-icon name="arrow-forward"></ion-icon>
+      </button>
+    </div>
+
+  </div>
+
+</ion-content>

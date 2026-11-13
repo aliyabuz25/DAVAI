@@ -1,0 +1,88 @@
+:host { --ion-background-color: var(--bg-primary); }
+ion-toolbar { --background: var(--bg-primary); --border-width: 0; }
+
+.toolbar-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 6px; }
+.brand-wordmark { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); letter-spacing: 0.12em; }
+
+.user-row { display: flex; align-items: center; gap: 8px; }
+.avatar-sm {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bg-tertiary); border: 0.5px solid var(--separator);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 700; color: var(--text-primary);
+}
+
+.greeting-block { padding: 12px 16px 16px; }
+.greeting-sub  { font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 2px; }
+.greeting-name { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.03em; margin: 0; }
+
+// ── Stats ────────────────────────────────────────────────────
+.stats-row { display: flex; gap: 8px; padding: 0 16px 4px; }
+.stat-tile {
+  flex: 1; background: var(--bg-secondary); border-radius: 12px; padding: 12px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  cursor: pointer; transition: opacity 0.15s;
+  &:active { opacity: 0.7; }
+  ion-icon { font-size: 1.1rem; color: var(--text-tertiary); }
+}
+.stat-val { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.04em; line-height: 1; }
+.stat-lbl { font-size: 0.62rem; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+
+// ── Modes list ───────────────────────────────────────────────
+.modes-list { margin: 0 16px; background: var(--bg-secondary); border-radius: 12px; overflow: hidden; }
+.mode-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border-bottom: 0.5px solid var(--separator);
+  background: none; border-left: none; border-right: none; border-top: none;
+  width: 100%; text-align: left; cursor: pointer; transition: background 0.12s;
+  font-family: var(--ion-font-family);
+  &:last-child { border-bottom: none; }
+  &:active { background: rgba(255,255,255,0.05); }
+}
+.mode-icon-wrap {
+  width: 34px; height: 34px; border-radius: 9px; background: var(--bg-tertiary);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  ion-icon { font-size: 1rem; color: var(--text-primary); }
+}
+.mode-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mode-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+.mode-desc { font-size: 0.75rem; color: var(--text-secondary); }
+.row-chevron { color: var(--text-tertiary); font-size: 0.9rem; flex-shrink: 0; }
+
+// ── Tasks ────────────────────────────────────────────────────
+.tasks-list { margin: 0 16px; background: var(--bg-secondary); border-radius: 12px; overflow: hidden; }
+.task-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border-bottom: 0.5px solid var(--separator); cursor: pointer; transition: background 0.12s;
+  &:last-child { border-bottom: none; }
+  &:active { background: rgba(255,255,255,0.05); }
+}
+.task-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: var(--text-tertiary);
+  &.prio-high   { background: var(--ios-red); }
+  &.prio-medium { background: var(--ios-orange); }
+  &.prio-low    { background: var(--ios-green); }
+}
+.task-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.task-title { font-size: 0.88rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-sub { font-size: 0.72rem; color: var(--text-secondary); .overdue { color: var(--ios-red); font-weight: 600; } }
+
+// ── Tools ────────────────────────────────────────────────────
+.tools-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 16px; }
+.tool-tile {
+  background: var(--bg-secondary); border-radius: 12px; padding: 14px 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer; border: none; font-size: 0.68rem; font-weight: 500;
+  color: var(--text-secondary); font-family: var(--ion-font-family); transition: opacity 0.15s;
+  &:active { opacity: 0.7; }
+  ion-icon { font-size: 1.2rem; color: var(--text-primary); }
+}
+
+.footer-note { text-align: center; padding: 28px 16px 100px; font-size: 0.68rem; color: var(--text-tertiary); }
+
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; padding: 28px 16px;
+  margin: 0 16px; background: var(--bg-secondary); border-radius: 12px; gap: 6px; text-align: center;
+  ion-icon { font-size: 1.5rem; color: var(--ios-green); }
+  h3 { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin: 0; }
+  p  { font-size: 0.8rem; color: var(--text-secondary); margin: 0; }
+}

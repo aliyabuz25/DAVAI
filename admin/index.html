@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>DAVAI Admin Panel</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+<link href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css" rel="stylesheet"/>
+<style>
+  :root {
+    --sidebar-w: 230px;
+    --bg:        #09090b;
+    --surface:   #121215;
+    --surface2:  #18181c;
+    --surface3:  #222228;
+    --border:    #27272f;
+    --border-hover: #3b3b47;
+    --text:      #fafafa;
+    --muted:     #71717a;
+    --muted2:    #a1a1aa;
+    --accent:    #ffffff;
+    --primary:   #6366f1;
+    --success:   #22c55e;
+    --warning:   #f59e0b;
+    --danger:    #ef4444;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:.875rem; -webkit-font-smoothing:antialiased;
+  }
+
+  /* ── Sidebar ─────────────────────────────────── */
+  #sidebar {
+    position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w);
+    background:var(--surface); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; z-index:100; overflow-y:auto;
+    transition:transform .2s ease;
+  }
+  .sidebar-brand {
+    padding:20px 20px 16px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .sidebar-brand .wordmark {
+    font-size:.9rem; font-weight:800; letter-spacing:.18em; color:var(--text);
+    display:flex; align-items:center; gap:8px;
+  }
+  .sidebar-brand .brand-badge {
+    font-size:.65rem; background:rgba(99,102,241,.15); color:#818cf8;
+    padding:2px 6px; border-radius:4px; font-weight:600; letter-spacing:normal;
+  }
+  .sidebar-brand .sub { font-size:.7rem; color:var(--muted); margin-top:3px; }
+  .nav-section { padding:14px 12px 4px; }
+  .nav-label   {
+    font-size:.64rem; font-weight:700; color:var(--muted);
+    letter-spacing:.08em; text-transform:uppercase; padding:0 8px; margin-bottom:6px;
+  }
+  .nav-item {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 12px; border-radius:8px; cursor:pointer;
+    color:var(--muted2); font-size:.84rem; font-weight:500;
+    transition:all .14s ease; margin-bottom:2px; border:none; background:none; width:100%; text-align:left;
+  }
+  .nav-item:hover  { background:var(--surface2); color:var(--text); }
+  .nav-item.active { background:var(--surface3); color:#fff; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+  .nav-item i      { font-size:1rem; width:18px; text-align:center; color:var(--muted); transition:color .14s; }
+  .nav-item:hover i, .nav-item.active i { color:#fff; }
+  .sidebar-footer  { margin-top:auto; padding:14px 12px; border-top:1px solid var(--border); }
+
+  /* ── Main ──────────────────────────────────────── */
+  #main { margin-left:var(--sidebar-w); min-height:100vh; display:flex; flex-direction:column; }
+  .topbar {
+    height:56px; background:var(--surface); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 24px; position:sticky; top:0; z-index:50;
+  }
+  .topbar-left { display:flex; align-items:center; gap:14px; }
+  .mobile-menu-btn { display:none; background:none; border:none; color:var(--text); font-size:1.25rem; cursor:pointer; padding:0; }
+  .topbar-title { font-size:1rem; font-weight:700; letter-spacing:-.01em; }
+  .topbar-right { display:flex; align-items:center; gap:14px; }
+  .avatar {
+    width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, #4f46e5, #06b6d4);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:.78rem; font-weight:700; box-shadow:0 2px 6px rgba(0,0,0,.2);
+  }
+
+  .status-pill {
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.25);
+    color:#4ade80; border-radius:99px; padding:3px 10px; font-size:.72rem; font-weight:600;
+  }
+  .status-dot { width:7px; height:7px; border-radius:50%; background:#22c55e; box-shadow:0 0 8px #22c55e; }
+
+  .content { padding:24px; flex:1; max-width:1440px; width:100%; margin:0 auto; }
+
+  /* ── Stat cards ─────────────────────────────────── */
+  .stat-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:20px; transition:transform .15s, border-color .15s; position:relative; overflow:hidden;
+  }
+  .stat-card:hover { border-color:var(--border-hover); transform:translateY(-2px); }
+  .stat-card .val   { font-size:1.85rem; font-weight:800; letter-spacing:-.03em; line-height:1; }
+  .stat-card .label { font-size:.72rem; color:var(--muted2); margin-top:6px; text-transform:uppercase; letter-spacing:.05em; font-weight:600; }
+  .stat-card .icon-watermark {
+    position:absolute; right:16px; top:16px; font-size:1.8rem;
+    color:var(--border); opacity:.45; pointer-events:none;
+  }
+
+  /* ── Section card ───────────────────────────────── */
+  .section-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden; margin-bottom:24px;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+  }
+  .section-head {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px; border-bottom:1px solid var(--border);
+    background:rgba(255,255,255,.015);
+  }
+  .section-head h2 { font-size:.92rem; font-weight:700; margin:0; display:flex; align-items:center; gap:8px; }
+  .section-head .head-actions { display:flex; align-items:center; gap:8px; }
+
+  /* ── Filter Pills ──────────────────────────────── */
+  .filter-pills { display:flex; gap:6px; flex-wrap:wrap; padding:12px 20px; border-bottom:1px solid var(--border); background:var(--surface2); }
+  .filter-pill {
+    background:none; border:1px solid var(--border); color:var(--muted2);
+    border-radius:99px; padding:4px 12px; font-size:.74rem; font-weight:500;
+    cursor:pointer; transition:all .12s;
+  }
+  .filter-pill:hover { color:#fff; border-color:#555; background:rgba(255,255,255,.03); }
+  .filter-pill.active { background:#fff; color:#000; border-color:#fff; font-weight:700; }
+
+  /* ── Simple tables (dashboard) ──────────────────── */
+  .simple-table { width:100%; border-collapse:collapse; }
+  .simple-table th {
+    font-size:.68rem; font-weight:700; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.06em; padding:12px 18px; border-bottom:1px solid var(--border);
+    text-align:left; background:var(--surface);
+  }
+  .simple-table td { padding:12px 18px; border-bottom:1px solid var(--border); font-size:.82rem; vertical-align:middle; }
+  .simple-table tr:last-child td { border-bottom:none; }
+  .simple-table tr:hover td { background:var(--surface2); }
+
+  /* ── DataTables dark theme ──────────────────────── */
+  html.dark {
+    --dt-html-background: #121215;
+    --dt-row-hover: 255,255,255;
+    --dt-row-stripe: 255,255,255;
+    --dt-column-ordering: 255,255,255;
+  }
+  div.dt-container { padding:0; background:var(--surface); }
+  div.dt-container .dt-search label,
+  div.dt-container .dt-length label { color:var(--muted2); font-size:.78rem; gap:6px; display:flex; align-items:center; }
+  div.dt-container .dt-search input,
+  div.dt-container .dt-length select {
+    background:var(--surface2) !important; border:1px solid var(--border) !important;
+    color:#fff !important; border-radius:7px; padding:6px 10px;
+    font-size:.78rem; outline:none; font-family:inherit;
+  }
+  div.dt-container .dt-search input:focus,
+  div.dt-container .dt-length select:focus { border-color:#6366f1 !important; box-shadow:0 0 0 1px #6366f1; }
+  div.dt-container .dt-length select option { background:var(--surface2); }
+  div.dt-container .dt-info { color:var(--muted); font-size:.75rem; }
+  div.dt-container .dt-paging .dt-paging-button {
+    background:transparent; border:1px solid var(--border) !important;
+    color:var(--muted2) !important; border-radius:6px; font-size:.75rem;
+    padding:4px 10px; margin:0 2px; cursor:pointer; transition:all .12s;
+  }
+  div.dt-container .dt-paging .dt-paging-button.current,
+  div.dt-container .dt-paging .dt-paging-button.current:hover {
+    background:#fff !important; color:#000 !important; font-weight:700;
+    border-color:#fff !important;
+  }
+  div.dt-container .dt-paging .dt-paging-button:hover:not(.disabled) {
+    background:var(--surface2) !important; color:#fff !important; border-color:#555 !important;
+  }
+  div.dt-container .dt-paging .dt-paging-button.disabled,
+  div.dt-container .dt-paging .dt-paging-button.disabled:hover {
+    color:#444 !important; border-color:var(--border) !important; background:transparent !important; cursor:default;
+  }
+  div.dt-container .dt-layout-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 20px; border-bottom:1px solid var(--border); background:var(--surface);
+  }
+  div.dt-container .dt-layout-row:last-child { border-bottom:none; border-top:1px solid var(--border); }
+  table.dataTable { border-collapse:collapse !important; width:100% !important; margin:0 !important; }
+  table.dataTable thead > tr > th {
+    font-size:.68rem; font-weight:700; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.06em;
+    padding:12px 20px !important; border-bottom:1px solid var(--border) !important;
+    background:var(--surface); white-space:nowrap;
+  }
+  table.dataTable > tbody > tr > td {
+    padding:12px 20px !important; border-bottom:1px solid var(--border) !important;
+    font-size:.82rem; vertical-align:middle; color:var(--text); background:transparent;
+  }
+  table.dataTable > tbody > tr:last-child > td { border-bottom:none !important; }
+  table.dataTable > tbody > tr:hover > td { background:var(--surface2) !important; }
+
+  /* ── Badges ────────────────────────────────────── */
+  .badge-pill {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 9px; border-radius:99px; font-size:.7rem; font-weight:600;
+  }
+  .badge-free    { background:rgba(255,255,255,.08); color:#a1a1aa; border:1px solid rgba(255,255,255,.1); }
+  .badge-pro     { background:rgba(99,102,241,.15); color:#a5b4fc; border:1px solid rgba(99,102,241,.3); font-weight:700; }
+  .badge-pro_max, .badge-promax { background:rgba(236,72,153,.15); color:#f472b6; border:1px solid rgba(236,72,153,.3); font-weight:700; }
+  .badge-pending { background:rgba(245,158,11,.15); color:#fbbf24; border:1px solid rgba(245,158,11,.3); }
+  .badge-approved{ background:rgba(34,197,94,.15);  color:#4ade80; border:1px solid rgba(34,197,94,.3); }
+  .badge-rejected{ background:rgba(239,68,68,.15);  color:#f87171; border:1px solid rgba(239,68,68,.3); }
+  .badge-web     { background:rgba(14,165,233,.12); color:#38bdf8; border:1px solid rgba(14,165,233,.25); }
+  .badge-app     { background:rgba(34,197,94,.12);  color:#4ade80; border:1px solid rgba(34,197,94,.25); }
+
+  /* ── Buttons ───────────────────────────────────── */
+  .btn-sm-white {
+    background:#fff; color:#000; border:none; border-radius:7px;
+    padding:5px 12px; font-size:.76rem; font-weight:700; cursor:pointer;
+    transition:all .14s; white-space:nowrap; display:inline-flex; align-items:center; gap:5px;
+  }
+  .btn-sm-white:hover { background:#e4e4e7; transform:translateY(-1px); }
+  .btn-sm-green {
+    background:rgba(34,197,94,.15); color:#4ade80; border:1px solid rgba(34,197,94,.3);
+    border-radius:7px; padding:5px 10px; font-size:.74rem; font-weight:600;
+    cursor:pointer; transition:all .14s; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;
+  }
+  .btn-sm-green:hover { background:rgba(34,197,94,.28); color:#86efac; }
+  .btn-sm-red {
+    background:rgba(239,68,68,.12); color:#f87171; border:1px solid rgba(239,68,68,.25);
+    border-radius:7px; padding:5px 10px; font-size:.74rem; font-weight:600;
+    cursor:pointer; transition:all .14s; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;
+  }
+  .btn-sm-red:hover { background:rgba(239,68,68,.25); color:#fca5a5; }
+  .btn-sm-ghost {
+    background:none; color:var(--muted2); border:1px solid var(--border);
+    border-radius:7px; padding:5px 11px; font-size:.74rem; cursor:pointer;
+    transition:all .14s; white-space:nowrap; display:inline-flex; align-items:center; gap:5px;
+  }
+  .btn-sm-ghost:hover { color:#fff; border-color:#555; background:rgba(255,255,255,.04); }
+  .action-cell { display:flex; gap:6px; align-items:center; }
+
+  /* ── Form elements ─────────────────────────────── */
+  .form-ctrl {
+    background:var(--surface2); border:1px solid var(--border); color:#fff;
+    border-radius:8px; padding:8px 12px; font-size:.84rem; outline:none;
+    transition:border-color .15s, box-shadow .15s; width:100%; font-family:inherit;
+  }
+  .form-ctrl:focus { border-color:#6366f1; box-shadow:0 0 0 2px rgba(99,102,241,.2); }
+  select.form-ctrl option { background:var(--surface2); }
+  .btn-link-action {
+    background:none; border:none; color:#818cf8; font-size:.72rem;
+    font-weight:600; cursor:pointer; padding:0; text-decoration:underline;
+  }
+  .btn-link-action:hover { color:#a5b4fc; }
+
+  /* ── Modals ─────────────────────────────────────── */
+  .modal-backdrop-custom {
+    position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(4px);
+    z-index:200; display:none; align-items:center; justify-content:center; padding:16px;
+  }
+  .modal-backdrop-custom.open { display:flex; }
+  .modal-box {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:28px; width:100%; max-width:480px;
+    box-shadow:0 12px 36px rgba(0,0,0,.5); animation:modalSlide .18s ease-out;
+  }
+  @keyframes modalSlide {
+    from { opacity:0; transform:scale(.96) translateY(-8px); }
+    to   { opacity:1; transform:scale(1) translateY(0); }
+  }
+  .modal-box h3 { font-size:1.05rem; font-weight:700; margin:0 0 18px; display:flex; align-items:center; gap:8px; }
+  .modal-label  { font-size:.72rem; font-weight:700; color:var(--muted2); text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; display:block; }
+  .modal-footer { display:flex; gap:8px; justify-content:flex-end; margin-top:24px; padding-top:16px; border-top:1px solid var(--border); }
+
+  /* ── Pages ─────────────────────────────────────── */
+  .page { display:none; }
+  .page.active { display:block; animation:fadeIn .15s ease; }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+  .empty-row td { text-align:center; color:var(--muted); padding:36px !important; font-size:.84rem; }
+
+  /* ── Toast ─────────────────────────────────────── */
+  #toast {
+    position:fixed; bottom:24px; right:24px; background:var(--surface2);
+    border:1px solid var(--border); color:#fff; border-radius:10px;
+    padding:12px 20px; font-size:.84rem; font-weight:500; z-index:300;
+    opacity:0; transform:translateY(10px); transition:opacity .2s, transform .2s;
+    pointer-events:none; display:flex; align-items:center; gap:9px; box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  #toast.show { opacity:1; transform:translateY(0); }
+  #toast.toast-success { border-color:rgba(34,197,94,.4); }
+  #toast.toast-error   { border-color:rgba(239,68,68,.4); }
+
+  /* ── Responsive ────────────────────────────────── */
+  @media (max-width: 900px) {
+    #sidebar { transform:translateX(-100%); }
+    #sidebar.mobile-open { transform:translateX(0); box-shadow:0 0 30px rgba(0,0,0,.8); }
+    #main { margin-left:0; }
+    .mobile-menu-btn { display:block; }
+    .sidebar-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:90; display:none; }
+    .sidebar-overlay.active { display:block; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <div class="sidebar-brand">
+    <div>
+      <div class="wordmark">DAVAI <span class="brand-badge">ADMIN</span></div>
+      <div class="sub">Production Management</div>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <button class="nav-item active" onclick="showPage('dashboard')"><i class="bi bi-grid-1x2"></i> Dashboard</button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Operations</div>
+    <button class="nav-item" onclick="showPage('users')"><i class="bi bi-people"></i> Users</button>
+    <button class="nav-item" onclick="showPage('payments')"><i class="bi bi-credit-card"></i> Payments</button>
+    <button class="nav-item" onclick="showPage('codes')"><i class="bi bi-key"></i> Pro Codes</button>
+    <button class="nav-item" onclick="showPage('site')"><i class="bi bi-palette"></i> Site Editor</button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">System & AI</div>
+    <button class="nav-item" onclick="showPage('settings')"><i class="bi bi-gear"></i> Settings</button>
+    <button class="nav-item" onclick="showPage('logs')"><i class="bi bi-terminal"></i> Rate Logs</button>
+  </div>
+  <div class="sidebar-footer">
+    <button class="nav-item" onclick="doLogout()"><i class="bi bi-box-arrow-left"></i> Sign Out</button>
+  </div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="mobile-menu-btn" onclick="toggleMobileSidebar()"><i class="bi bi-list"></i></button>
+      <span class="topbar-title" id="topbar-title">Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill" title="Backend services running">
+        <span class="status-dot"></span>
+        <span>Online</span>
+      </div>
+      <a href="/" target="_blank" class="btn-sm-ghost" style="text-decoration:none">
+        <i class="bi bi-box-arrow-up-right"></i> Site
+      </a>
+      <button class="btn-sm-ghost" onclick="refreshCurrentPage()" title="Refresh data">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+      <div class="avatar" id="admin-avatar" title="Logged in Admin">A</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <i class="bi bi-people icon-watermark"></i>
+            <div class="val" id="s-total-users">—</div>
+            <div class="label">Total Students</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <i class="bi bi-star-fill icon-watermark"></i>
+            <div class="val" id="s-pro-users" style="color:#a5b4fc">—</div>
+            <div class="label">Pro Subscribers</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <i class="bi bi-clock-history icon-watermark"></i>
+            <div class="val" id="s-pending-payments" style="color:#fbbf24">—</div>
+            <div class="label">Pending Payments</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <i class="bi bi-person-plus icon-watermark"></i>
+            <div class="val" id="s-today-signups" style="color:#4ade80">—</div>
+            <div class="label">Signups Today</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Shortcuts -->
+      <div class="section-card p-3 mb-4" style="background:var(--surface2)">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <span style="font-size:.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Quick Actions:</span>
+            <button class="btn-sm-white" onclick="openAddUser()"><i class="bi bi-person-plus"></i> Add User</button>
+            <button class="btn-sm-ghost" onclick="openGenerateCode()"><i class="bi bi-key"></i> Generate Pro Code</button>
+            <button class="btn-sm-ghost" onclick="showPage('payments')"><i class="bi bi-credit-card"></i> Review Payments</button>
+            <button class="btn-sm-ghost" onclick="showPage('settings')"><i class="bi bi-sliders"></i> AI Settings</button>
+          </div>
+          <button class="btn-sm-ghost" onclick="loadDashboard()"><i class="bi bi-arrow-repeat"></i> Reload Stats</button>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <div class="section-card">
+            <div class="section-head">
+              <h2><i class="bi bi-person-lines-fill"></i> Recent Students</h2>
+              <button class="btn-sm-ghost" onclick="showPage('users')">See all <i class="bi bi-arrow-right"></i></button>
+            </div>
+            <table class="simple-table">
+              <thead><tr><th>Student</th><th>Plan</th><th>Source</th><th>Joined</th></tr></thead>
+              <tbody id="dash-recent-users"><tr class="empty-row"><td colspan="4">Loading users...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="section-card">
+            <div class="section-head">
+              <h2><i class="bi bi-credit-card-2-front"></i> Pending Payment Approvals</h2>
+              <button class="btn-sm-ghost" onclick="showPage('payments')">Manage all <i class="bi bi-arrow-right"></i></button>
+            </div>
+            <table class="simple-table">
+              <thead><tr><th>Sender</th><th>Plan</th><th>Source</th><th>Action</th></tr></thead>
+              <tbody id="dash-pending-payments"><tr class="empty-row"><td colspan="4">Loading payments...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div class="section-card">
+        <div class="section-head">
+          <h2><i class="bi bi-people"></i> Student Accounts</h2>
+          <div class="head-actions">
+            <button class="btn-sm-ghost" onclick="exportUsersCSV()"><i class="bi bi-download"></i> Export CSV</button>
+            <button class="btn-sm-white" onclick="openAddUser()"><i class="bi bi-plus"></i> Add User</button>
+          </div>
+        </div>
+        <div class="filter-pills">
+          <button class="filter-pill active" onclick="filterUserTable('all', this)">All</button>
+          <button class="filter-pill" onclick="filterUserTable('free', this)">Free</button>
+          <button class="filter-pill" onclick="filterUserTable('pro', this)">Pro</button>
+          <button class="filter-pill" onclick="filterUserTable('pro_max', this)">Pro Max</button>
+          <button class="filter-pill" onclick="filterUserTable('app', this)">App Users</button>
+          <button class="filter-pill" onclick="filterUserTable('web', this)">Web Users</button>
+        </div>
+        <div class="p-0">
+          <table id="dt-users" class="table" style="width:100%">
+            <thead><tr><th>Name</th><th>Email</th><th>Program</th><th>Plan</th><th>Source</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENTS -->
+    <div class="page" id="page-payments">
+      <div class="section-card">
+        <div class="section-head">
+          <h2><i class="bi bi-credit-card"></i> Payment Transactions</h2>
+          <div class="head-actions">
+            <button class="btn-sm-ghost" onclick="reloadPayments()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+          </div>
+        </div>
+        <div class="filter-pills">
+          <button class="filter-pill active" id="pay-pill-all" onclick="setPaymentFilter('', this)">All</button>
+          <button class="filter-pill" id="pay-pill-pending" onclick="setPaymentFilter('pending', this)">Pending</button>
+          <button class="filter-pill" id="pay-pill-approved" onclick="setPaymentFilter('approved', this)">Approved</button>
+          <button class="filter-pill" id="pay-pill-rejected" onclick="setPaymentFilter('rejected', this)">Rejected</button>
+        </div>
+        <input type="hidden" id="payment-filter" value=""/>
+        <div class="p-0">
+          <table id="dt-payments" class="table" style="width:100%">
+            <thead><tr><th>Sender</th><th>Plan</th><th>Reference</th><th>Status</th><th>Source</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CODES -->
+    <div class="page" id="page-codes">
+      <div class="section-card">
+        <div class="section-head">
+          <h2><i class="bi bi-key"></i> Promo & Pro Plan Codes</h2>
+          <button class="btn-sm-white" onclick="openGenerateCode()"><i class="bi bi-plus"></i> Generate Code</button>
+        </div>
+        <div class="filter-pills">
+          <button class="filter-pill active" onclick="filterCodesTable('all', this)">All</button>
+          <button class="filter-pill" onclick="filterCodesTable('available', this)">Available</button>
+          <button class="filter-pill" onclick="filterCodesTable('used', this)">Redeemed</button>
+        </div>
+        <div class="p-0">
+          <table id="dt-codes" class="table" style="width:100%">
+            <thead><tr><th>Code</th><th>Plan</th><th>Created</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SITE EDITOR -->
+    <div class="page" id="page-site">
+      <div class="row g-3">
+        <!-- Colors -->
+        <div class="col-12">
+          <div class="section-card">
+            <div class="section-head"><h2><i class="bi bi-palette"></i> Brand & Theme Colors</h2></div>
+            <div class="p-3">
+              <div class="row g-3">
+                <div class="col-md-2 col-6"><label class="modal-label">Background</label><div class="d-flex gap-2 align-items-center"><input type="color" class="site-color-input" id="sc-bg-base" value="#000000"/><input class="form-ctrl" id="sc-bg-base-hex" style="font-family:monospace" placeholder="#000000"/></div></div>
+                <div class="col-md-2 col-6"><label class="modal-label">Surface</label><div class="d-flex gap-2 align-items-center"><input type="color" class="site-color-input" id="sc-bg-surface" value="#0e0e11"/><input class="form-ctrl" id="sc-bg-surface-hex" style="font-family:monospace" placeholder="#0e0e11"/></div></div>
+                <div class="col-md-2 col-6"><label class="modal-label">Text Main</label><div class="d-flex gap-2 align-items-center"><input type="color" class="site-color-input" id="sc-text-main" value="#ffffff"/><input class="form-ctrl" id="sc-text-main-hex" style="font-family:monospace" placeholder="#ffffff"/></div></div>
+                <div class="col-md-2 col-6"><label class="modal-label">Text Muted</label><div class="d-flex gap-2 align-items-center"><input type="color" class="site-color-input" id="sc-text-muted" value="#a1a1aa"/><input class="form-ctrl" id="sc-text-muted-hex" style="font-family:monospace" placeholder="#a1a1aa"/></div></div>
+                <div class="col-md-2 col-6"><label class="modal-label">Card BG</label><div class="d-flex gap-2 align-items-center"><input type="color" class="site-color-input" id="sc-card-bg" value="#0e0e11"/><input class="form-ctrl" id="sc-card-bg-hex" style="font-family:monospace" placeholder="#0e0e11"/></div></div>
+                <div class="col-md-2 col-6"><label class="modal-label">Accent</label><div class="d-flex gap-2 align-items-center"><input type="color" class="site-color-input" id="sc-accent" value="#ffffff"/><input class="form-ctrl" id="sc-accent-hex" style="font-family:monospace" placeholder="#ffffff"/></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="col-md-6">
+          <div class="section-card">
+            <div class="section-head"><h2><i class="bi bi-square"></i> Primary CTA Button</h2></div>
+            <div class="p-3">
+              <div class="row g-3">
+                <div class="col-6"><label class="modal-label">Background</label><div class="d-flex gap-2 align-items-center"><input type="color" class="site-color-input" id="sc-btn-primary-bg" value="#ffffff"/><input class="form-ctrl" id="sc-btn-primary-bg-hex" style="font-family:monospace"/></div></div>
+                <div class="col-6"><label class="modal-label">Text Color</label><div class="d-flex gap-2 align-items-center"><input type="color" class="site-color-input" id="sc-btn-primary-color" value="#000000"/><input class="form-ctrl" id="sc-btn-primary-color-hex" style="font-family:monospace"/></div></div>
+                <div class="col-12"><label class="modal-label">Button Label</label><input class="form-ctrl" id="sc-btn-primary-text" placeholder="Test Study Assistant"/></div>
+              </div>
+              <div class="mt-3">
+                <div style="font-size:.72rem;color:var(--muted);margin-bottom:6px">Live Preview</div>
+                <button id="btn-primary-preview" style="background:#fff;color:#000;border:none;border-radius:8px;padding:8px 18px;font-weight:600;font-size:.85rem;cursor:default">Test Study Assistant</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="section-card">
+            <div class="section-head"><h2><i class="bi bi-square"></i> Secondary Button</h2></div>
+            <div class="p-3">
+              <div class="row g-3">
+                <div class="col-6"><label class="modal-label">Background (RGBA/Hex)</label><input class="form-ctrl" id="sc-btn-secondary-bg" placeholder="rgba(255,255,255,0.08)" style="font-family:monospace"/></div>
+                <div class="col-6"><label class="modal-label">Text Color</label><div class="d-flex gap-2 align-items-center"><input type="color" class="site-color-input" id="sc-btn-secondary-color" value="#ffffff"/><input class="form-ctrl" id="sc-btn-secondary-color-hex" style="font-family:monospace"/></div></div>
+                <div class="col-12"><label class="modal-label">Button Label</label><input class="form-ctrl" id="sc-btn-secondary-text" placeholder="Download App"/></div>
+              </div>
+              <div class="mt-3">
+                <div style="font-size:.72rem;color:var(--muted);margin-bottom:6px">Live Preview</div>
+                <button id="btn-secondary-preview" style="background:rgba(255,255,255,0.08);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-weight:600;font-size:.85rem;cursor:default">Download App</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Typography & Content -->
+        <div class="col-12">
+          <div class="section-card">
+            <div class="section-head"><h2><i class="bi bi-type"></i> Headlines & Content</h2></div>
+            <div class="p-3">
+              <div class="row g-3">
+                <div class="col-md-6"><label class="modal-label">Site Title</label><input class="form-ctrl" id="sc-site-title"/></div>
+                <div class="col-md-6"><label class="modal-label">Tagline</label><input class="form-ctrl" id="sc-site-tagline"/></div>
+                <div class="col-12"><label class="modal-label">Hero Subtitle</label><textarea class="form-ctrl" id="sc-hero-subtitle" rows="2"></textarea></div>
+                <div class="col-md-6"><label class="modal-label">CTA Title</label><input class="form-ctrl" id="sc-cta-title"/></div>
+                <div class="col-md-6"><label class="modal-label">CTA Subtitle</label><input class="form-ctrl" id="sc-cta-subtitle"/></div>
+                <div class="col-md-6"><label class="modal-label">Features Section Title</label><input class="form-ctrl" id="sc-features-title"/></div>
+                <div class="col-md-6"><label class="modal-label">Footer Text</label><input class="form-ctrl" id="sc-footer-text"/></div>
+              </div>
+              <div class="mt-4 pt-3 border-top d-flex gap-2">
+                <button class="btn-sm-white" onclick="saveSiteConfig()"><i class="bi bi-check-lg"></i> Save All Site Changes</button>
+                <button class="btn-sm-ghost" onclick="resetSiteConfig()"><i class="bi bi-arrow-counterclockwise"></i> Reset to Defaults</button>
+                <span id="site-save-status" style="display:none;color:#4ade80;font-size:.8rem;align-self:center"><i class="bi bi-check-circle"></i> Saved!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="row g-3">
+        <!-- AI Config -->
+        <div class="col-12">
+          <div class="section-card">
+            <div class="section-head">
+              <h2><i class="bi bi-robot"></i> Anthropic Claude AI Settings</h2>
+              <span id="ai-save-status" style="display:none;color:#4ade80;font-size:.8rem"><i class="bi bi-check-circle"></i> Settings synced</span>
+            </div>
+            <div class="p-4">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="modal-label">API Base URL</label>
+                  <input class="form-ctrl" id="ai-base-url" placeholder="https://api.anthropic.com/v1"/>
+                </div>
+                <div class="col-md-6">
+                  <label class="modal-label">Anthropic API Key</label>
+                  <div class="d-flex gap-2">
+                    <input class="form-ctrl" id="ai-api-key" type="password" placeholder="Enter key (sk-ant-...)" autocomplete="off"/>
+                    <button class="btn-sm-ghost" type="button" onclick="toggleKeyVisibility()" id="key-eye-btn"><i class="bi bi-eye"></i></button>
+                  </div>
+                  <div style="font-size:.74rem;color:var(--muted);margin-top:4px" id="ai-key-hint"></div>
+                </div>
+                <div class="col-md-6">
+                  <label class="modal-label">Active AI Model</label>
+                  <div id="model-loading" style="color:var(--muted);font-size:.82rem;padding:8px 0">Loading available models...</div>
+                  <select class="form-ctrl" id="model-select" style="display:none" onchange="onModelSelect(this.value)"></select>
+                </div>
+                <div class="col-md-6">
+                  <label class="modal-label">Max Reply Tokens</label>
+                  <input class="form-ctrl" id="ai-max-tokens" type="number" min="100" max="4096" placeholder="800"/>
+                  <div style="font-size:.7rem;color:var(--muted);margin-top:3px">Standard reply length (800 is balanced)</div>
+                </div>
+
+                <!-- Limits row -->
+                <div class="col-12"><div style="height:1px;background:var(--border);margin:8px 0"></div></div>
+                <div class="col-12">
+                  <div style="font-size:.8rem;font-weight:700;margin-bottom:10px;color:var(--muted2)">STUDENT RATE LIMITS (MESSAGES PER HOUR)</div>
+                </div>
+                <div class="col-md-4 col-12">
+                  <label class="modal-label">Free Plan Limit / hr</label>
+                  <input class="form-ctrl" id="ai-free-limit" type="number" min="1" max="9999" placeholder="15"/>
+                </div>
+                <div class="col-md-4 col-12">
+                  <label class="modal-label">Pro Plan Limit / hr</label>
+                  <input class="form-ctrl" id="ai-pro-limit" type="number" min="1" max="9999" placeholder="60"/>
+                </div>
+                <div class="col-md-4 col-12">
+                  <label class="modal-label">Pro Max Limit / hr</label>
+                  <input class="form-ctrl" id="ai-promax-limit" type="number" min="1" max="9999" placeholder="150"/>
+                </div>
+
+                <div class="col-12 mt-4 d-flex gap-2 align-items-center flex-wrap">
+                  <button class="btn-sm-white" onclick="saveAIConfig()"><i class="bi bi-save"></i> Save AI Settings</button>
+                  <button class="btn-sm-ghost" onclick="testAIConfig()"><i class="bi bi-lightning-charge"></i> Test API Connection</button>
+                  <span id="ai-test-result" style="font-size:.82rem;margin-left:6px"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Change password -->
+        <div class="col-md-6">
+          <div class="section-card">
+            <div class="section-head"><h2><i class="bi bi-shield-lock"></i> Change Admin Password</h2></div>
+            <div class="p-3">
+              <div class="mb-3"><label class="modal-label">Current Password</label><input class="form-ctrl" id="cur-pw" type="password"/></div>
+              <div class="mb-3"><label class="modal-label">New Password (8+ chars)</label><input class="form-ctrl" id="new-pw" type="password"/></div>
+              <div class="mb-3"><label class="modal-label">Confirm New Password</label><input class="form-ctrl" id="new-pw2" type="password"/></div>
+              <button class="btn-sm-white" onclick="changePassword()"><i class="bi bi-key"></i> Update Password</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- System info -->
+        <div class="col-md-6">
+          <div class="section-card">
+            <div class="section-head"><h2><i class="bi bi-info-circle"></i> Service Diagnostics</h2></div>
+            <div class="p-3">
+              <table class="simple-table">
+                <tbody>
+                  <tr><td style="color:var(--muted)">Web Server & Admin</td><td><span class="badge-pill badge-approved">Port 5050 (Active)</span></td></tr>
+                  <tr><td style="color:var(--muted)">Mobile App Backend</td><td><span class="badge-pill badge-approved">Port 3000 (Active)</span></td></tr>
+                  <tr><td style="color:var(--muted)">Database Mode</td><td><span class="badge-pill badge-web">SQLite 3 (WAL Concurrent)</span></td></tr>
+                  <tr><td style="color:var(--muted)">AI Configuration</td><td id="si-ai"><span class="badge-pill badge-free">Checking...</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="page" id="page-logs">
+      <div class="section-card">
+        <div class="section-head">
+          <h2><i class="bi bi-terminal"></i> Rate Limiter & IP Activity Log</h2>
+          <button class="btn-sm-ghost" onclick="loadLogs()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        </div>
+        <div class="p-0">
+          <table id="dt-logs" class="table" style="width:100%">
+            <thead><tr><th>IP / Device</th><th>Requests</th><th>Plan</th><th>Window Resets</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal: Edit/Add User -->
+<div class="modal-backdrop-custom" id="user-modal">
+  <div class="modal-box">
+    <h3 id="user-modal-title"><i class="bi bi-person-fill-gear"></i> Edit User</h3>
+    <input type="hidden" id="edit-user-id"/>
+    <div class="mb-3">
+      <label class="modal-label">Full Name</label>
+      <input class="form-ctrl" id="edit-name" placeholder="Student name"/>
+    </div>
+    <div class="mb-3">
+      <label class="modal-label">Email Address</label>
+      <input class="form-ctrl" id="edit-email" type="email" placeholder="student@example.com"/>
+    </div>
+    <div class="row g-2 mb-3">
+      <div class="col-6">
+        <label class="modal-label">Membership Plan</label>
+        <select class="form-ctrl" id="edit-plan">
+          <option value="free">Free</option>
+          <option value="pro">Pro</option>
+          <option value="pro_max">Pro Max</option>
+        </select>
+      </div>
+      <div class="col-6">
+        <label class="modal-label">Program</label>
+        <select class="form-ctrl" id="edit-program">
+          <option value="IB">IB</option>
+          <option value="IELTS">IELTS</option>
+          <option value="Both">Both</option>
+        </select>
+      </div>
+    </div>
+    <div class="mb-3">
+      <label class="modal-label">School / Institution</label>
+      <input class="form-ctrl" id="edit-school" placeholder="e.g. Baku European Lyceum"/>
+    </div>
+    <div class="mb-3" id="edit-pw-wrap">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <label class="modal-label mb-0" id="pw-label">Password</label>
+        <button type="button" class="btn-link-action" onclick="generateRandomUserPassword()">Generate Password</button>
+      </div>
+      <input class="form-ctrl" id="edit-password" type="text" placeholder="Leave blank to keep existing password"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm-ghost" onclick="closeModal('user-modal')">Cancel</button>
+      <button class="btn-sm-white" onclick="saveUser()"><i class="bi bi-check-lg"></i> Save Student</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Generate Code -->
+<div class="modal-backdrop-custom" id="code-modal">
+  <div class="modal-box">
+    <h3><i class="bi bi-key-fill"></i> Generate Pro Promo Code</h3>
+    <div class="mb-3">
+      <label class="modal-label">Target Plan</label>
+      <select class="form-ctrl" id="code-plan">
+        <option value="pro">Pro Plan</option>
+        <option value="pro_max">Pro Max Plan</option>
+      </select>
+    </div>
+    <div id="generated-code-box" style="display:none;margin-bottom:14px;background:var(--surface2);padding:12px;border-radius:8px;border:1px solid var(--border)">
+      <label class="modal-label">Generated Code</label>
+      <div class="d-flex gap-2 mt-1">
+        <input class="form-ctrl" id="generated-code-val" readonly style="font-family:monospace;font-weight:700;letter-spacing:.05em;color:#4ade80"/>
+        <button class="btn-sm-white" onclick="copyCode()"><i class="bi bi-clipboard"></i> Copy</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm-ghost" onclick="closeModal('code-modal')">Close</button>
+      <button class="btn-sm-white" onclick="generateCode()"><i class="bi bi-magic"></i> Generate</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Custom Confirmation -->
+<div class="modal-backdrop-custom" id="confirm-modal">
+  <div class="modal-box" style="max-width:400px">
+    <h3 id="confirm-modal-title">Confirm Action</h3>
+    <p id="confirm-modal-msg" style="color:var(--muted2);font-size:.85rem;margin:0 0 16px"></p>
+    <div class="modal-footer">
+      <button class="btn-sm-ghost" id="confirm-modal-cancel">Cancel</button>
+      <button class="btn-sm-red" id="confirm-modal-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- JS deps -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+
+<script>
+const TOKEN = () => localStorage.getItem('davai_admin_token');
+
+// ── Auth check ────────────────────────────────────────────────
+(async function() {
+  if (!TOKEN()) return redirect();
+  const res = await api('GET', '/admin/api/me');
+  if (!res.ok) return redirect();
+  const d = await res.json();
+  document.getElementById('admin-username')?.replaceChildren(document.createTextNode(d.username));
+  document.getElementById('admin-avatar').textContent = (d.username || 'A')[0].toUpperCase();
+  loadDashboard();
+})();
+
+function redirect() { window.location.href = '/admin/login'; }
+
+function api(method, path, body) {
+  return fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': TOKEN() },
+    body: body ? JSON.stringify(body) : undefined
+  });
+}
+
+function toggleMobileSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('mobile-open');
+  ov.classList.toggle('active');
+}
+
+// ── DT defaults ───────────────────────────────────────────────
+const DT_DEFAULTS = {
+  pageLength: 10,
+  lengthMenu: [10, 25, 50, 100],
+  language: {
+    search: '',
+    searchPlaceholder: 'Search records...',
+    lengthMenu: '_MENU_ per page',
+    info: 'Showing _START_–_END_ of _TOTAL_',
+    emptyTable: 'No records found',
+    zeroRecords: 'No matching records found'
+  },
+  order: [],
+  autoWidth: false,
+  responsive: false,
+};
+
+let dtUsers, dtPayments, dtCodes, dtLogs;
+window._usersMap = new Map();
+window._codesMap = new Map();
+
+// ── Navigation ────────────────────────────────────────────────
+const PAGE_TITLES = {
+  dashboard: 'Overview & Statistics',
+  users:     'Student Management',
+  payments:  'Payment Approvals',
+  codes:     'Promo & Pro Codes',
+  site:      'Site Content & Styling',
+  settings:  'AI Configuration & System',
+  logs:      'Rate Limiter Logs'
+};
+
+let _currentPage = 'dashboard';
+
+function showPage(name) {
+  _currentPage = name;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+
+  document.querySelectorAll('.nav-item').forEach(n => {
+    const text = n.textContent.trim().toLowerCase();
+    if (text.includes(name) || (name === 'settings' && text.includes('setting')) || (name === 'codes' && text.includes('code'))) {
+      n.classList.add('active');
+    }
+  });
+
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[name] || name;
+
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.remove('mobile-open');
+  ov.classList.remove('active');
+
+  const loaders = {
+    dashboard: loadDashboard,
+    users:     loadUsers,
+    payments:  loadPayments,
+    codes:     loadCodes,
+    site:      loadSiteEditor,
+    settings:  loadSettings,
+    logs:      loadLogs
+  };
+  if (loaders[name]) loaders[name]();
+}
+
+function refreshCurrentPage() {
+  showPage(_currentPage);
+  toast('Page data refreshed', 'info');
+}
+
+// ── Dashboard ─────────────────────────────────────────────────
+async function loadDashboard() {
+  const res = await api('GET', '/admin/api/stats');
+  if (!res.ok) return;
+  const d = await res.json();
+  document.getElementById('s-total-users').textContent       = d.total_users;
+  document.getElementById('s-pro-users').textContent         = d.pro_users;
+  document.getElementById('s-pending-payments').textContent  = d.pending_payments;
+  document.getElementById('s-today-signups').textContent     = d.today_signups;
+
+  const ru = document.getElementById('dash-recent-users');
+  ru.innerHTML = d.recent_users.length ? d.recent_users.map(u => `
+    <tr>
+      <td>
+        <div style="font-weight:600">${esc(u.name)}</div>
+        <div style="color:var(--muted);font-size:.72rem">${esc(u.email)}</div>
+      </td>
+      <td><span class="badge-pill badge-${u.plan}">${u.plan}</span></td>
+      <td><span class="badge-pill badge-${u.source||'web'}">${u.source||'web'}</span></td>
+      <td style="color:var(--muted)">${fmtDate(u.created_at)}</td>
+    </tr>`).join('') : '<tr class="empty-row"><td colspan="4">No students registered yet</td></tr>';
+
+  const pp = document.getElementById('dash-pending-payments');
+  pp.innerHTML = d.pending_pay.length ? d.pending_pay.map(p => `
+    <tr>
+      <td>
+        <div style="font-weight:600">${esc(p.sender_name)}</div>
+        <div style="color:var(--muted);font-size:.72rem">${esc(p.sender_ref||'Direct transfer')}</div>
+      </td>
+      <td><span class="badge-pill badge-${p.plan_id}">${p.plan_id}</span></td>
+      <td><span class="badge-pill badge-${p.source||'web'}">${p.source||'web'}</span></td>
+      <td>
+        <div class="action-cell">
+          <button class="btn-sm-green" onclick="approvePayment('${p.id}')"><i class="bi bi-check-lg"></i> Approve</button>
+          <button class="btn-sm-red" onclick="rejectPayment('${p.id}')"><i class="bi bi-x-lg"></i></button>
+        </div>
+      </td>
+    </tr>`).join('') : '<tr class="empty-row"><td colspan="4"><i class="bi bi-check-circle" style="color:#22c55e"></i> No pending payments</td></tr>';
+}
+
+// ── Users DataTable ───────────────────────────────────────────
+async function loadUsers() {
+  const res = await api('GET', '/admin/api/users');
+  if (!res.ok) return;
+  const users = await res.json();
+
+  if (dtUsers) { dtUsers.clear().destroy(); dtUsers = null; }
+
+  window._usersMap = new Map();
+  users.forEach(u => window._usersMap.set(String(u.id), u));
+
+  const rows = users.map(u => [
+    `<div style="font-weight:600">${esc(u.name)}</div><div style="font-size:.72rem;color:var(--muted)">${esc(u.school || '')}</div>`,
+    `<span style="color:#a1a1aa">${esc(u.email)}</span>`,
+    `<span style="color:#a1a1aa">${u.program||'IB'}</span>`,
+    `<span class="badge-pill badge-${u.plan}">${u.plan}</span>`,
+    `<span class="badge-pill badge-${u.source||'web'}">${u.source||'web'}</span>`,
+    fmtDate(u.created_at),
+    `<div class="action-cell">
+       <button class="btn-sm-ghost" onclick="openEditUserById('${u.id}')"><i class="bi bi-pencil"></i> Edit</button>
+       <button class="btn-sm-red" onclick="deleteUserById('${u.id}')"><i class="bi bi-trash"></i></button>
+     </div>`,
+  ]);
+
+  dtUsers = $('#dt-users').DataTable({
+    ...DT_DEFAULTS,
+    data: rows,
+    columnDefs: [{ orderable: false, targets: 6 }],
+    order: [[5, 'desc']],
+  });
+}
+
+function filterUserTable(filter, btn) {
+  document.querySelectorAll('#page-users .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (!dtUsers) return;
+  if (filter === 'all') {
+    dtUsers.search('').columns().search('').draw();
+  } else if (filter === 'free' || filter === 'pro' || filter === 'pro_max') {
+    dtUsers.columns().search('');
+    dtUsers.column(3).search(filter).draw();
+  } else if (filter === 'app' || filter === 'web') {
+    dtUsers.columns().search('');
+    dtUsers.column(4).search(filter).draw();
+  }
+}
+
+function exportUsersCSV() {
+  if (!window._usersMap || window._usersMap.size === 0) return toast('No users to export.', 'info');
+  const headers = ['ID', 'Name', 'Email', 'Plan', 'Program', 'School', 'Source', 'Created At'];
+  const rows = Array.from(window._usersMap.values()).map(u => [
+    `"${u.id}"`,
+    `"${(u.name || '').replace(/"/g, '""')}"`,
+    `"${(u.email || '').replace(/"/g, '""')}"`,
+    `"${u.plan || 'free'}"`,
+    `"${u.program || 'IB'}"`,
+    `"${(u.school || '').replace(/"/g, '""')}"`,
+    `"${u.source || 'web'}"`,
+    `"${u.created_at || ''}"`,
+  ]);
+  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `davai_students_${new Date().toISOString().slice(0,10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast('Students exported to CSV', 'success');
+}
+
+function openAddUser() {
+  document.getElementById('user-modal-title').innerHTML = '<i class="bi bi-person-plus-fill"></i> Add Student';
+  document.getElementById('edit-user-id').value = '';
+  ['edit-name','edit-email','edit-school','edit-password'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('edit-plan').value = 'free';
+  document.getElementById('edit-program').value = 'IB';
+  document.getElementById('pw-label').textContent = 'Password';
+  openModal('user-modal');
+}
+
+function openEditUserById(id) {
+  const u = window._usersMap?.get(String(id));
+  if (!u) return;
+  openEditUser(u);
+}
+
+function openEditUser(u) {
+  document.getElementById('user-modal-title').innerHTML = '<i class="bi bi-person-gear"></i> Edit Student';
+  document.getElementById('edit-user-id').value   = u.id;
+  document.getElementById('edit-name').value      = u.name;
+  document.getElementById('edit-email').value     = u.email;
+  document.getElementById('edit-plan').value      = u.plan;
+  document.getElementById('edit-program').value   = u.program || 'IB';
+  document.getElementById('edit-school').value    = u.school || '';
+  document.getElementById('edit-password').value  = '';
+  document.getElementById('pw-label').textContent = 'Password (leave blank to keep)';
+  openModal('user-modal');
+}
+
+function generateRandomUserPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$';
+  let pw = 'Davai-' + Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  document.getElementById('edit-password').value = pw;
+  toast('Generated password: ' + pw, 'info');
+}
+
+async function saveUser() {
+  const id      = document.getElementById('edit-user-id').value;
+  const payload = {
+    name:     document.getElementById('edit-name').value.trim(),
+    email:    document.getElementById('edit-email').value.trim(),
+    plan:     document.getElementById('edit-plan').value,
+    program:  document.getElementById('edit-program').value,
+    school:   document.getElementById('edit-school').value.trim(),
+    password: document.getElementById('edit-password').value || undefined,
+  };
+  if (!payload.name || !payload.email) return toast('Name and email required.', 'error');
+  const res = id
+    ? await api('PATCH', `/admin/api/users/${id}`, payload)
+    : await api('POST',  '/admin/api/users', payload);
+  const d = await res.json();
+  if (!res.ok) return toast(d.message || 'Error saving user', 'error');
+  closeModal('user-modal');
+  toast(id ? 'Student updated successfully' : 'Student created successfully', 'success');
+  loadUsers();
+  loadDashboard();
+}
+
+async function deleteUserById(id) {
+  const u = window._usersMap?.get(String(id));
+  const name = u ? u.name : 'this user';
+  deleteUser(id, name);
+}
+
+async function deleteUser(id, name) {
+  const confirmed = await showConfirm(
+    'Delete Student',
+    `Are you sure you want to delete student "${name}"? All associated homework and records will be deleted.`,
+    'Delete Student',
+    'btn-sm-red'
+  );
+  if (!confirmed) return;
+  const res = await api('DELETE', `/admin/api/users/${id}`);
+  if (!res.ok) return toast('Delete failed.', 'error');
+  toast('Student account deleted', 'success');
+  loadUsers();
+  loadDashboard();
+}
+
+// ── Payments DataTable ────────────────────────────────────────
+async function loadPayments() {
+  const filter = document.getElementById('payment-filter')?.value || '';
+  const res = await api('GET', `/admin/api/payments${filter ? '?status='+filter : ''}`);
+  if (!res.ok) return;
+  const rows_data = await res.json();
+
+  if (dtPayments) { dtPayments.clear().destroy(); dtPayments = null; }
+
+  const rows = rows_data.map(p => [
+    `<div style="font-weight:600">${esc(p.sender_name)}</div>`,
+    `<span class="badge-pill badge-${p.plan_id}">${p.plan_id}</span>`,
+    `<span style="color:#a1a1aa">${esc(p.sender_ref||'—')}</span>`,
+    `<span class="badge-pill badge-${p.status}">${p.status}</span>`,
+    `<span class="badge-pill badge-${p.source||'web'}">${p.source||'web'}</span>`,
+    fmtDate(p.created_at),
+    p.status === 'pending'
+      ? `<div class="action-cell">
+           <button class="btn-sm-green" onclick="approvePayment('${p.id}')"><i class="bi bi-check-lg"></i> Approve</button>
+           <button class="btn-sm-red" onclick="rejectPayment('${p.id}')"><i class="bi bi-x-lg"></i> Reject</button>
+         </div>`
+      : `<span style="color:var(--muted);font-size:.74rem">${p.status === 'approved' ? '<i class="bi bi-check-circle-fill" style="color:#22c55e"></i> Approved' : '<i class="bi bi-x-circle-fill" style="color:#ef4444"></i> Rejected'}</span>`,
+  ]);
+
+  dtPayments = $('#dt-payments').DataTable({
+    ...DT_DEFAULTS,
+    data: rows,
+    columnDefs: [{ orderable: false, targets: 6 }],
+    order: [[5, 'desc']],
+  });
+}
+
+function setPaymentFilter(status, btn) {
+  document.querySelectorAll('#page-payments .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('payment-filter').value = status;
+  loadPayments();
+}
+
+function reloadPayments() {
+  loadPayments();
+  toast('Payments reloaded', 'info');
+}
+
+async function approvePayment(id) {
+  const res = await api('POST', `/admin/api/payments/${id}/approve`);
+  if (!res.ok) return toast('Failed to approve payment.', 'error');
+  toast('Payment approved — Student plan activated!', 'success');
+  loadPayments();
+  loadDashboard();
+}
+
+async function rejectPayment(id) {
+  const confirmed = await showConfirm(
+    'Reject Payment',
+    'Are you sure you want to reject this payment transfer?',
+    'Reject Payment',
+    'btn-sm-red'
+  );
+  if (!confirmed) return;
+  const res = await api('POST', `/admin/api/payments/${id}/reject`);
+  if (!res.ok) return toast('Failed to reject payment.', 'error');
+  toast('Payment rejected', 'info');
+  loadPayments();
+  loadDashboard();
+}
+
+// ── Codes DataTable ───────────────────────────────────────────
+async function loadCodes() {
+  const res = await api('GET', '/admin/api/codes');
+  if (!res.ok) return;
+  const codes = await res.json();
+
+  if (dtCodes) { dtCodes.clear().destroy(); dtCodes = null; }
+
+  window._codesMap = new Map();
+  codes.forEach(c => window._codesMap.set(String(c.id), c));
+
+  const rows = codes.map(c => [
+    `<div class="d-flex align-items-center gap-2">
+       <code style="font-size:.82rem;font-weight:700;color:#e4e4e7;letter-spacing:.03em">${esc(c.code)}</code>
+       <button class="btn-sm-ghost" style="padding:2px 7px" onclick="copyText('${esc(c.code)}')"><i class="bi bi-clipboard"></i></button>
+     </div>`,
+    `<span class="badge-pill badge-${c.plan}">${c.plan}</span>`,
+    fmtDate(c.created_at),
+    c.used_at
+      ? `<span class="badge-pill badge-free"><i class="bi bi-person-check"></i> Used ${fmtDate(c.used_at)}</span>`
+      : `<span class="badge-pill badge-approved"><i class="bi bi-check-circle"></i> Available</span>`,
+    `<button class="btn-sm-red" onclick="deleteCode('${c.id}')"><i class="bi bi-trash"></i></button>`,
+  ]);
+
+  dtCodes = $('#dt-codes').DataTable({
+    ...DT_DEFAULTS,
+    data: rows,
+    columnDefs: [{ orderable: false, targets: [0, 4] }],
+    order: [[2, 'desc']],
+  });
+}
+
+function filterCodesTable(filter, btn) {
+  document.querySelectorAll('#page-codes .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (!dtCodes) return;
+  if (filter === 'all') {
+    dtCodes.column(3).search('').draw();
+  } else if (filter === 'available') {
+    dtCodes.column(3).search('Available').draw();
+  } else if (filter === 'used') {
+    dtCodes.column(3).search('Used').draw();
+  }
+}
+
+function openGenerateCode() {
+  document.getElementById('generated-code-box').style.display = 'none';
+  openModal('code-modal');
+}
+
+async function generateCode() {
+  const plan = document.getElementById('code-plan').value;
+  const res  = await api('POST', '/admin/api/codes/generate', { plan });
+  if (!res.ok) return toast('Failed to generate code.', 'error');
+  const d = await res.json();
+  document.getElementById('generated-code-val').value = d.code;
+  document.getElementById('generated-code-box').style.display = 'block';
+  toast('Code generated: ' + d.code, 'success');
+  loadCodes();
+  loadDashboard();
+}
+
+function copyCode() {
+  copyText(document.getElementById('generated-code-val').value);
+}
+
+function copyText(str) {
+  if (!str) return;
+  navigator.clipboard.writeText(str).then(() => {
+    toast(`Copied to clipboard: ${str}`, 'success');
+  }).catch(() => {
+    toast('Copy failed', 'error');
+  });
+}
+
+async function deleteCode(id) {
+  const confirmed = await showConfirm(
+    'Delete Promo Code',
+    'Are you sure you want to delete this promo code?',
+    'Delete Code',
+    'btn-sm-red'
+  );
+  if (!confirmed) return;
+  const res = await api('DELETE', `/admin/api/codes/${id}`);
+  if (!res.ok) return toast('Delete failed.', 'error');
+  toast('Code deleted', 'success');
+  loadCodes();
+  loadDashboard();
+}
+
+// ── Settings ──────────────────────────────────────────────────
+let _aiCfg = null;
+
+async function loadSettings() {
+  // System diagnostics
+  const hres = await fetch('/health');
+  if (hres.ok) {
+    const d = await hres.json();
+    document.getElementById('si-ai').innerHTML = d.ai
+      ? '<span class="badge-pill badge-approved"><i class="bi bi-check-circle"></i> Configured</span>'
+      : '<span class="badge-pill badge-pending"><i class="bi bi-exclamation-triangle"></i> Key missing</span>';
+  }
+
+  // AI config
+  const res = await api('GET', '/admin/api/ai-config');
+  if (!res.ok) return;
+  _aiCfg = await res.json();
+
+  document.getElementById('ai-base-url').value     = _aiCfg.base_url     || '';
+  document.getElementById('ai-api-key').value      = '';
+  document.getElementById('ai-max-tokens').value   = _aiCfg.max_tokens   || 800;
+  document.getElementById('ai-free-limit').value   = _aiCfg.free_limit   || 15;
+  document.getElementById('ai-pro-limit').value    = _aiCfg.pro_limit    || 60;
+  document.getElementById('ai-promax-limit').value = _aiCfg.promax_limit || 150;
+  document.getElementById('ai-key-hint').innerHTML = _aiCfg.api_key_set
+    ? `<i class="bi bi-shield-check" style="color:#22c55e"></i> Key active: <code>${_aiCfg.api_key_hint}</code>`
+    : '<span style="color:#f59e0b"><i class="bi bi-exclamation-triangle"></i> No key set — chat will return error</span>';
+
+  renderModelGrid(_aiCfg.models, _aiCfg.active_model);
+}
+
+function renderModelGrid(models, active) {
+  if (!models || !models.length) return;
+  document.getElementById('model-loading').style.display = 'none';
+  const sel = document.getElementById('model-select');
+  sel.style.display = 'block';
+  sel.innerHTML = models.map(m =>
+    `<option value="${esc(m.id)}" ${m.id === active ? 'selected' : ''}>${esc(m.label)}</option>`
+  ).join('');
+  if (_aiCfg) _aiCfg._selected = sel.value;
+}
+
+function onModelSelect(id) {
+  if (_aiCfg) _aiCfg._selected = id;
+}
+
+function toggleKeyVisibility() {
+  const inp = document.getElementById('ai-api-key');
+  const btn = document.getElementById('key-eye-btn');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    btn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+  } else {
+    inp.type = 'password';
+    btn.innerHTML = '<i class="bi bi-eye"></i>';
+  }
+}
+
+async function saveAIConfig() {
+  const url       = document.getElementById('ai-base-url').value.trim();
+  const key       = document.getElementById('ai-api-key').value.trim();
+  const active    = document.getElementById('model-select').value || _aiCfg?.active_model;
+  const maxTok    = parseInt(document.getElementById('ai-max-tokens').value)   || 0;
+  const freeLim   = parseInt(document.getElementById('ai-free-limit').value)   || 0;
+  const proLim    = parseInt(document.getElementById('ai-pro-limit').value)    || 0;
+  const promaxLim = parseInt(document.getElementById('ai-promax-limit').value) || 0;
+
+  const payload = {};
+  if (url)          payload.base_url     = url;
+  if (key)          payload.api_key      = key;
+  if (active)       payload.active_model = active;
+  if (maxTok > 0)   payload.max_tokens   = maxTok;
+  if (freeLim > 0)  payload.free_limit   = freeLim;
+  if (proLim > 0)   payload.pro_limit    = proLim;
+  if (promaxLim > 0)payload.promax_limit = promaxLim;
+
+  if (!Object.keys(payload).length) return toast('Nothing to save.', 'info');
+
+  const res = await api('POST', '/admin/api/ai-config', payload);
+  const d   = await res.json();
+  if (!res.ok) return toast(d.message || 'Error saving AI config.', 'error');
+
+  const status = document.getElementById('ai-save-status');
+  status.style.display = 'inline';
+  setTimeout(() => status.style.display = 'none', 3000);
+  toast('AI configuration saved successfully!', 'success');
+  await loadSettings();
+}
+
+async function testAIConfig() {
+  const res = document.getElementById('ai-test-result');
+  res.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Testing API...';
+  res.style.color = '#a1a1aa';
+
+  const url    = document.getElementById('ai-base-url').value.trim() || _aiCfg?.base_url;
+  const key    = document.getElementById('ai-api-key').value.trim();
+  const active = document.getElementById('model-select').value || _aiCfg?.active_model;
+
+  try {
+    const testRes = await api('POST', '/admin/api/ai-config/test', {
+      base_url:     url,
+      api_key:      key,
+      active_model: active,
+    });
+    const d = await testRes.json();
+    if (d.ok) {
+      res.innerHTML = `<span style="color:#4ade80"><i class="bi bi-check-circle-fill"></i> Connected (${d.latency_ms}ms) — Model: ${esc(d.model)}</span>`;
+      toast('AI connection verified successfully!', 'success');
+    } else {
+      res.innerHTML = `<span style="color:#f87171"><i class="bi bi-exclamation-triangle-fill"></i> ${esc(d.message || 'Connection failed')}</span>`;
+      toast(d.message || 'AI test failed', 'error');
+    }
+  } catch (err) {
+    res.innerHTML = '<span style="color:#f87171"><i class="bi bi-x-circle-fill"></i> Request failed</span>';
+    toast('Error connecting to backend test endpoint', 'error');
+  }
+}
+
+async function changePassword() {
+  const cur  = document.getElementById('cur-pw').value;
+  const np   = document.getElementById('new-pw').value;
+  const np2  = document.getElementById('new-pw2').value;
+  if (!cur || !np) return toast('Please fill in current and new password.', 'error');
+  if (np.length < 8) return toast('New password must be at least 8 characters.', 'error');
+  if (np !== np2) return toast('New passwords do not match.', 'error');
+
+  const res = await api('POST', '/admin/api/change-password', { current: cur, new_password: np });
+  const d   = await res.json();
+  if (!res.ok) return toast(d.message || 'Password update failed.', 'error');
+  ['cur-pw','new-pw','new-pw2'].forEach(id => document.getElementById(id).value = '');
+  toast('Admin password updated successfully!', 'success');
+}
+
+// ── Logs ──────────────────────────────────────────────────────
+async function loadLogs() {
+  const res = await api('GET', '/admin/api/logs');
+  if (!res.ok) return;
+  const logs = await res.json();
+
+  if (dtLogs) { dtLogs.clear().destroy(); dtLogs = null; }
+
+  const rows = logs.map(l => [
+    `<code style="font-size:.78rem;color:#ccc">${esc(l.ip || l.device || 'unknown')}</code>`,
+    `<span style="font-weight:700">${l.count}</span> req`,
+    `<span class="badge-pill badge-${l.plan}">${l.plan}</span>`,
+    l.reset_in ? `${Math.round(l.reset_in)}s` : '—',
+  ]);
+
+  dtLogs = $('#dt-logs').DataTable({
+    ...DT_DEFAULTS,
+    data: rows,
+    order: [[1, 'desc']],
+  });
+}
+
+// ── Site Editor ───────────────────────────────────────────────
+let _siteCfg = null;
+
+async function loadSiteEditor() {
+  const res = await api('GET', '/admin/api/site-config');
+  if (!res.ok) return;
+  _siteCfg = await res.json();
+
+  setColorField('sc-bg-base',            _siteCfg.bg_base);
+  setColorField('sc-bg-surface',         _siteCfg.bg_surface);
+  setColorField('sc-text-main',          _siteCfg.text_main);
+  setColorField('sc-text-muted',         _siteCfg.text_muted);
+  setColorField('sc-card-bg',            _siteCfg.card_bg);
+  setColorField('sc-accent',             _siteCfg.accent_color);
+  setColorField('sc-btn-primary-bg',     _siteCfg.btn_primary_bg);
+  setColorField('sc-btn-primary-color',  _siteCfg.btn_primary_color);
+  setColorField('sc-navbar-brand-bg',    _siteCfg.navbar_brand_bg);
+  setColorField('sc-navbar-brand-color', _siteCfg.navbar_brand_color);
+  setColorField('sc-btn-secondary-color',_siteCfg.btn_secondary_color);
+
+  sv('sc-btn-secondary-bg',   _siteCfg.btn_secondary_bg);
+  sv('sc-btn-primary-text',   _siteCfg.btn_primary_text);
+  sv('sc-btn-secondary-text', _siteCfg.btn_secondary_text || 'Download App');
+  sv('sc-site-title',         _siteCfg.site_title);
+  sv('sc-site-tagline',       _siteCfg.site_tagline);
+  sv('sc-hero-subtitle',      _siteCfg.hero_subtitle);
+  sv('sc-cta-title',          _siteCfg.cta_title);
+  sv('sc-cta-subtitle',       _siteCfg.cta_subtitle);
+  sv('sc-features-title',     _siteCfg.features_title);
+  sv('sc-footer-text',        _siteCfg.footer_text);
+
+  updateButtonPreviews();
+}
+
+function sv(id, val) {
+  const el = document.getElementById(id);
+  if (el && val !== undefined) el.value = val;
+}
+
+function setColorField(id, hex) {
+  if (!hex || !hex.startsWith('#')) return;
+  const picker = document.getElementById(id);
+  const textEl = document.getElementById(id + '-hex');
+  if (picker) picker.value = hex;
+  if (textEl) textEl.value = hex;
+}
+
+function bindColorPair(id) {
+  const picker = document.getElementById(id);
+  const hex    = document.getElementById(id + '-hex');
+  if (!picker || !hex) return;
+  picker.addEventListener('input', () => { hex.value = picker.value; updateButtonPreviews(); });
+  hex.addEventListener('input', () => {
+    if (/^#[0-9a-fA-F]{6}$/.test(hex.value)) { picker.value = hex.value; updateButtonPreviews(); }
+  });
+}
+
+function updateButtonPreviews() {
+  const pb = document.getElementById('sc-btn-primary-bg');
+  const pc = document.getElementById('sc-btn-primary-color');
+  const pt = document.getElementById('sc-btn-primary-text');
+  const pp = document.getElementById('btn-primary-preview');
+  if (pp) {
+    if (pb) pp.style.background = pb.value;
+    if (pc) pp.style.color = pc.value;
+    if (pt) pp.textContent = pt.value || 'Test Study Assistant';
+  }
+  const sb  = document.getElementById('sc-btn-secondary-bg');
+  const sc2 = document.getElementById('sc-btn-secondary-color');
+  const st2 = document.getElementById('sc-btn-secondary-text');
+  const sp  = document.getElementById('btn-secondary-preview');
+  if (sp) {
+    if (sb)  sp.style.background = sb.value;
+    if (sc2) sp.style.color = sc2.value;
+    if (st2 && st2.value) sp.textContent = st2.value;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  ['sc-bg-base','sc-bg-surface','sc-text-main','sc-text-muted','sc-card-bg',
+   'sc-accent','sc-btn-primary-bg','sc-btn-primary-color',
+   'sc-navbar-brand-bg','sc-navbar-brand-color','sc-btn-secondary-color'].forEach(bindColorPair);
+  document.getElementById('sc-btn-primary-text')?.addEventListener('input', updateButtonPreviews);
+  document.getElementById('sc-btn-secondary-text')?.addEventListener('input', updateButtonPreviews);
+  document.getElementById('sc-btn-secondary-bg')?.addEventListener('input', updateButtonPreviews);
+});
+
+function gv(id)  { return document.getElementById(id)?.value?.trim() || ''; }
+function gcv(id) {
+  const h = document.getElementById(id + '-hex');
+  if (h && /^#[0-9a-fA-F]{6}$/.test(h.value)) return h.value;
+  const p = document.getElementById(id);
+  return p ? p.value : '';
+}
+
+async function saveSiteConfig() {
+  const payload = {
+    bg_base:             gcv('sc-bg-base'),
+    bg_surface:          gcv('sc-bg-surface'),
+    text_main:           gcv('sc-text-main'),
+    text_muted:          gcv('sc-text-muted'),
+    card_bg:             gcv('sc-card-bg'),
+    accent_color:        gcv('sc-accent'),
+    btn_primary_bg:      gcv('sc-btn-primary-bg'),
+    btn_primary_color:   gcv('sc-btn-primary-color'),
+    btn_primary_text:    gv('sc-btn-primary-text'),
+    btn_secondary_bg:    gv('sc-btn-secondary-bg'),
+    btn_secondary_color: gcv('sc-btn-secondary-color'),
+    btn_secondary_text:  gv('sc-btn-secondary-text'),
+    navbar_brand_bg:     gcv('sc-navbar-brand-bg'),
+    navbar_brand_color:  gcv('sc-navbar-brand-color'),
+    site_title:          gv('sc-site-title'),
+    site_tagline:        gv('sc-site-tagline'),
+    hero_subtitle:       gv('sc-hero-subtitle'),
+    cta_title:           gv('sc-cta-title'),
+    cta_subtitle:        gv('sc-cta-subtitle'),
+    features_title:      gv('sc-features-title'),
+    footer_text:         gv('sc-footer-text'),
+  };
+  Object.keys(payload).forEach(k => { if (!payload[k]) delete payload[k]; });
+  const res = await api('POST', '/admin/api/site-config', payload);
+  const d   = await res.json();
+  if (!res.ok) return toast(d.message || 'Error saving site styling.', 'error');
+  const st = document.getElementById('site-save-status');
+  st.style.display = 'inline';
+  setTimeout(() => st.style.display = 'none', 3000);
+  toast('Site content and styling updated!', 'success');
+}
+
+async function resetSiteConfig() {
+  const confirmed = await showConfirm(
+    'Reset Styling',
+    'Reset all custom colors and text to DAVAI defaults?',
+    'Reset to Defaults',
+    'btn-sm-red'
+  );
+  if (!confirmed) return;
+  const res = await api('POST', '/admin/api/site-config', { _reset: '1' });
+  if (!res.ok) return toast('Reset failed.', 'error');
+  toast('Site settings reset to defaults.', 'info');
+  await loadSiteEditor();
+}
+
+function doLogout() {
+  localStorage.removeItem('davai_admin_token');
+  window.location.href = '/admin/login';
+}
+
+// ── Modals & Dialogs ──────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop-custom').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-backdrop-custom.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+function showConfirm(title, message, btnText = 'Confirm', btnClass = 'btn-sm-red') {
+  return new Promise(resolve => {
+    document.getElementById('confirm-modal-title').textContent = title;
+    document.getElementById('confirm-modal-msg').textContent = message;
+    const confirmBtn = document.getElementById('confirm-modal-btn');
+    confirmBtn.textContent = btnText;
+    confirmBtn.className = btnClass;
+
+    const onConfirm = () => { cleanup(); closeModal('confirm-modal'); resolve(true); };
+    const onCancel  = () => { cleanup(); closeModal('confirm-modal'); resolve(false); };
+
+    function cleanup() {
+      confirmBtn.removeEventListener('click', onConfirm);
+      document.getElementById('confirm-modal-cancel').removeEventListener('click', onCancel);
+    }
+
+    confirmBtn.addEventListener('click', onConfirm);
+    document.getElementById('confirm-modal-cancel').addEventListener('click', onCancel);
+    openModal('confirm-modal');
+  });
+}
+
+// ── Toast Notifications ───────────────────────────────────────
+function toast(msg, type = 'default') {
+  const t = document.getElementById('toast');
+  let icon = '';
+  if (type === 'success') icon = '<i class="bi bi-check-circle-fill" style="color:#22c55e"></i>';
+  else if (type === 'error') icon = '<i class="bi bi-exclamation-triangle-fill" style="color:#ef4444"></i>';
+  else if (type === 'info')  icon = '<i class="bi bi-info-circle-fill" style="color:#6366f1"></i>';
+
+  t.innerHTML = `${icon}<span>${esc(msg)}</span>`;
+  t.className = `toast-${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  try {
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? s : d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  } catch {
+    return s;
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+:host { --ion-background-color: var(--bg-primary); }
+ion-toolbar { --background: var(--bg-primary); --border-width: 0; }
+
+.pay-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+}
+
+.back-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg-secondary); border: none;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-primary); cursor: pointer;
+  ion-icon { font-size: 1rem; }
+}
+
+.toolbar-title { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+
+// ── Wrap ─────────────────────────────────────────────────────
+.pay-wrap {
+  padding: 8px 16px 60px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+// ── Plan banner ──────────────────────────────────────────────
+.plan-banner {
+  background: var(--bg-secondary); border-radius: 14px; padding: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  border: 0.5px solid var(--separator);
+}
+
+.plan-banner-left { display: flex; flex-direction: column; gap: 3px; }
+.plan-banner-name { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.plan-banner-desc { font-size: 0.78rem; color: var(--text-secondary); }
+.plan-banner-price { display: flex; align-items: baseline; gap: 2px; }
+.price-amt { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.03em; }
+.price-per { font-size: 0.75rem; color: var(--text-secondary); }
+
+// ── Section label ────────────────────────────────────────────
+.section-label {
+  font-size: 0.72rem; font-weight: 600; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+// ── Recipient card ───────────────────────────────────────────
+.recipient-card {
+  background: var(--bg-secondary); border-radius: 14px; overflow: hidden;
+}
+
+.recipient-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px; gap: 12px; cursor: pointer;
+  &:active { background: rgba(255,255,255,0.04); }
+}
+
+.recipient-row-left {
+  display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0;
+}
+
+.rr-label {
+  font-size: 0.7rem; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.02em;
+}
+
+.rr-value {
+  font-size: 0.92rem; font-weight: 500; color: var(--text-primary);
+  &.mono  { font-family: 'SF Mono', 'Courier New', monospace; letter-spacing: 0.05em; font-size: 0.9rem; }
+  &.small { font-size: 0.78rem; }
+}
+
+.row-sep { height: 0.5px; background: var(--separator); margin: 0 16px; }
+
+.copy-btn {
+  width: 30px; height: 30px; border-radius: 8px; background: var(--bg-tertiary);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  ion-icon { font-size: 0.9rem; color: var(--text-secondary); }
+
+  &.copied {
+    background: rgba(48,209,88,0.1);
+    ion-icon { color: var(--ios-green); }
+  }
+}
+
+// ── Notice ───────────────────────────────────────────────────
+.notice {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: rgba(255,255,255,0.04); border-radius: 12px;
+  border: 0.5px solid var(--separator); padding: 12px 14px;
+
+  ion-icon { font-size: 1rem; color: var(--text-secondary); flex-shrink: 0; margin-top: 1px; }
+  p { font-size: 0.8rem; color: var(--text-secondary); margin: 0; line-height: 1.5; }
+}
+
+// ── Form fields ──────────────────────────────────────────────
+.field-group {
+  display: flex; flex-direction: column; gap: 6px;
+  label { font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); }
+}
+
+.field-input {
+  background: var(--bg-secondary); border: 0.5px solid var(--separator);
+  border-radius: 11px; color: var(--text-primary);
+  font-family: var(--ion-font-family); font-size: 0.92rem;
+  padding: 13px 14px; outline: none; width: 100%;
+  transition: border-color 0.15s;
+  &:focus { border-color: var(--text-primary); }
+  &::placeholder { color: var(--text-tertiary); }
+}
+
+// ── Buttons ──────────────────────────────────────────────────
+.primary-btn {
+  width: 100%; height: 50px;
+  background: var(--text-primary); color: #000;
+  border: none; border-radius: 12px;
+  font-size: 0.95rem; font-weight: 700;
+  font-family: var(--ion-font-family); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.15s;
+  &:disabled { opacity: 0.3; }
+  &:not(:disabled):active { opacity: 0.8; }
+  ion-spinner { --color: #000; width: 20px; height: 20px; }
+}
+
+.ghost-btn {
+  width: 100%; height: 46px; background: none;
+  border: 0.5px solid var(--separator); border-radius: 12px;
+  color: var(--text-secondary); font-size: 0.92rem; font-weight: 500;
+  font-family: var(--ion-font-family); cursor: pointer;
+  &:active { background: var(--bg-secondary); }
+}
+
+.small-note {
+  font-size: 0.75rem; color: var(--text-tertiary); text-align: center;
+  line-height: 1.5; margin: 0;
+}
+
+// ── Confirm ──────────────────────────────────────────────────
+.confirm-card {
+  background: var(--bg-secondary); border-radius: 14px; padding: 24px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+}
+
+.confirm-icon {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: rgba(48,209,88,0.1);
+  display: flex; align-items: center; justify-content: center;
+  ion-icon { font-size: 1.8rem; color: var(--ios-green); }
+}
+
+.confirm-card h2 {
+  font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0;
+}
+
+.confirm-card p {
+  font-size: 0.85rem; color: var(--text-secondary); margin: 0; line-height: 1.5; max-width: 260px;
+  strong { color: var(--text-primary); }
+}
+
+.confirm-summary {
+  background: var(--bg-secondary); border-radius: 14px; overflow: hidden;
+}
+
+.cs-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px;
+}
+
+.cs-label { font-size: 0.82rem; color: var(--text-secondary); }
+.cs-value { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }

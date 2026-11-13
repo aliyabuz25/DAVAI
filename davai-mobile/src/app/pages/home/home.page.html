@@ -1,0 +1,110 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <div class="toolbar-row">
+      <span class="brand-wordmark">DAVAI</span>
+      <div class="user-row">
+        <div class="avatar-sm">{{ initials() }}</div>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Greeting -->
+  <div class="greeting-block">
+    <p class="greeting-sub">{{ greeting() }}</p>
+    <h1 class="greeting-name">{{ user()?.name?.split(' ')[0] ?? 'Student' }}</h1>
+  </div>
+
+  <!-- Stats row -->
+  <div class="stats-row">
+    <div class="stat-tile" (click)="goToHomework()">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <span class="stat-val">{{ hw.dueToday().length }}</span>
+      <span class="stat-lbl">Due today</span>
+    </div>
+    <div class="stat-tile" [class.warn]="hw.overdueCount() > 0" (click)="goToHomework()">
+      <ion-icon name="warning-outline"></ion-icon>
+      <span class="stat-val">{{ hw.overdueCount() }}</span>
+      <span class="stat-lbl">Overdue</span>
+    </div>
+    <div class="stat-tile" (click)="goToHomework()">
+      <ion-icon name="layers-outline"></ion-icon>
+      <span class="stat-val">{{ hw.pending().length }}</span>
+      <span class="stat-lbl">Pending</span>
+    </div>
+  </div>
+
+  <!-- Study Assistant -->
+  <div class="section-header">
+    <h2>Study Assistant</h2>
+    <button (click)="goToChat(chatModes[0].id)">Open</button>
+  </div>
+  <div class="modes-list">
+    <button class="mode-row" *ngFor="let m of chatModes" (click)="goToChat(m.id)">
+      <div class="mode-icon-wrap">
+        <ion-icon [name]="m.ionicon"></ion-icon>
+      </div>
+      <div class="mode-info">
+        <span class="mode-name">{{ m.label }}</span>
+        <span class="mode-desc">{{ m.desc }}</span>
+      </div>
+      <ion-icon name="chevron-forward" class="row-chevron"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Upcoming tasks -->
+  <div class="section-header">
+    <h2>Upcoming Tasks</h2>
+    <button (click)="goToHomework()">See all</button>
+  </div>
+
+  <div class="empty-state" *ngIf="recentTasks().length === 0">
+    <ion-icon name="checkmark-circle-outline"></ion-icon>
+    <h3>All clear</h3>
+    <p>No pending tasks. Tap to add one.</p>
+  </div>
+
+  <div class="tasks-list" *ngIf="recentTasks().length > 0">
+    <div class="task-row" *ngFor="let t of recentTasks()" (click)="goToHomework()">
+      <div class="task-dot" [class]="'prio-' + t.priority"></div>
+      <div class="task-info">
+        <span class="task-title">{{ t.title }}</span>
+        <span class="task-sub">{{ t.subject }} &middot; <span [class.overdue]="isOverdue(t)">{{ dueDateLabel(t) }}</span></span>
+      </div>
+      <ion-icon name="chevron-forward" class="row-chevron"></ion-icon>
+    </div>
+  </div>
+
+  <!-- Tools -->
+  <div class="section-header">
+    <h2>Quick Tools</h2>
+    <button (click)="goToTools()">See all</button>
+  </div>
+  <div class="tools-grid">
+    <button class="tool-tile" (click)="goToTools()">
+      <ion-icon name="timer-outline"></ion-icon>
+      <span>Pomodoro</span>
+    </button>
+    <button class="tool-tile" (click)="goToTools()">
+      <ion-icon name="text-outline"></ion-icon>
+      <span>Vocab</span>
+    </button>
+    <button class="tool-tile" (click)="goToTools()">
+      <ion-icon name="list-outline"></ion-icon>
+      <span>Criteria</span>
+    </button>
+    <button class="tool-tile" (click)="goToTools()">
+      <ion-icon name="radio-outline"></ion-icon>
+      <span>Podcasts</span>
+    </button>
+  </div>
+
+  <div class="footer-note">DAVAI &middot; Free AI Study Platform &middot; IB &amp; IELTS</div>
+
+</ion-content>

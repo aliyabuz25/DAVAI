@@ -1,0 +1,149 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <div class="hw-toolbar">
+      <div class="title-row">
+        <h1 class="page-large-title" style="padding:0">Homework</h1>
+        <span class="overdue-badge" *ngIf="overdueCount() > 0">{{ overdueCount() }} overdue</span>
+      </div>
+    </div>
+  </ion-toolbar>
+  <div class="seg-wrap">
+    <div class="seg-bar">
+      <button class="seg-btn" [class.active]="filterTab() === 'pending'" (click)="setFilter('pending')">
+        Pending <span class="seg-count">{{ hw.pending().length }}</span>
+      </button>
+      <button class="seg-btn" [class.active]="filterTab() === 'done'" (click)="setFilter('done')">
+        Done <span class="seg-count">{{ hw.done().length }}</span>
+      </button>
+      <button class="seg-btn" [class.active]="filterTab() === 'all'" (click)="setFilter('all')">
+        All <span class="seg-count">{{ hw.items().length }}</span>
+      </button>
+    </div>
+  </div>
+</ion-header>
+
+<ion-content>
+
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="empty-state" *ngIf="filteredItems().length === 0">
+    <ion-icon name="checkmark-done-outline"></ion-icon>
+    <h3>{{ filterTab() === 'done' ? 'Nothing completed yet' : 'All clear' }}</h3>
+    <p>{{ filterTab() === 'done' ? 'Complete tasks to see them here.' : 'Tap + to add your first task.' }}</p>
+  </div>
+
+  <div class="hw-list" *ngIf="filteredItems().length > 0">
+    <div class="hw-card"
+         *ngFor="let item of filteredItems(); trackBy: trackById"
+         [class.done-card]="item.status === 'done'"
+         [class.overdue-card]="isOverdue(item)">
+
+      <div class="prio-stripe" [class]="'ps-' + item.priority"></div>
+
+      <div class="hw-body">
+        <div class="hw-top">
+          <button class="status-btn" (click)="toggleStatus(item)">
+            <ion-icon
+              [name]="item.status === 'done' ? 'checkmark-circle' : item.status === 'in_progress' ? 'time-outline' : 'ellipse-outline'"
+              [style.color]="item.status === 'done' ? 'var(--ios-green)' : item.status === 'in_progress' ? 'var(--ios-blue)' : 'var(--text-tertiary)'">
+            </ion-icon>
+          </button>
+          <div class="hw-info">
+            <span class="hw-title" [class.done-title]="item.status === 'done'">{{ item.title }}</span>
+            <div class="hw-meta">
+              <span class="subj-tag">{{ item.subject }}</span>
+              <span class="due-txt" [class.overdue-txt]="isOverdue(item)">{{ dueDateLabel(item) }}</span>
+            </div>
+          </div>
+          <div class="hw-btns">
+            <button class="icon-btn" (click)="openEdit(item)">
+              <ion-icon name="create-outline"></ion-icon>
+            </button>
+            <button class="icon-btn danger" (click)="deleteItem(item)">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+        <div class="hw-note" *ngIf="item.notes">{{ item.notes }}</div>
+      </div>
+    </div>
+  </div>
+
+</ion-content>
+
+<ion-fab slot="fixed" vertical="bottom" horizontal="end">
+  <ion-fab-button (click)="openAdd()">
+    <ion-icon name="add"></ion-icon>
+  </ion-fab-button>
+</ion-fab>
+
+<!-- Modal -->
+<ion-modal [isOpen]="showModal()" (didDismiss)="closeModal()"
+           [breakpoints]="[0, 0.9, 1]" [initialBreakpoint]="0.9">
+  <ng-template>
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <h2>{{ modalTitle }}</h2>
+        <button class="modal-close-btn" (click)="closeModal()">
+          <ion-icon name="close"></ion-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <div class="field">
+          <label>Title</label>
+          <input class="field-input" type="text" placeholder="e.g. Write TOK Draft" [(ngModel)]="form.title"/>
+        </div>
+
+        <div class="field">
+          <label>Subject</label>
+          <select class="field-select" [(ngModel)]="form.subject">
+            <option *ngFor="let s of subjects" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Due Date</label>
+            <input class="field-input" type="date" [(ngModel)]="form.dueDate"/>
+          </div>
+          <div class="field">
+            <label>Time (opt.)</label>
+            <input class="field-input" type="time" [(ngModel)]="form.dueTime"/>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Priority</label>
+          <div class="choice-row">
+            <button *ngFor="let p of priorities" class="choice-btn"
+                    [class]="form.priority === p.value ? 'active-' + p.value : ''"
+                    (click)="form.priority = p.value">{{ p.label }}</button>
+          </div>
+        </div>
+
+        <div class="field" *ngIf="editingId()">
+          <label>Status</label>
+          <div class="choice-row">
+            <button *ngFor="let s of statuses" class="choice-btn"
+                    [class.active-status]="form.status === s.value"
+                    (click)="form.status = s.value">{{ s.label }}</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Notes</label>
+          <textarea class="field-textarea" rows="2" placeholder="Optional notes..." [(ngModel)]="form.notes"></textarea>
+        </div>
+
+        <button class="save-btn" (click)="save()" [disabled]="!form.title.trim()">
+          {{ editingId() ? 'Update' : 'Add Task' }}
+        </button>
+
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>

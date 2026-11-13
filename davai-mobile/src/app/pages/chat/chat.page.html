@@ -1,0 +1,110 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <div class="chat-toolbar">
+      <div class="toolbar-left">
+        <div class="mode-icon-sm">
+          <ion-icon [name]="getCurrentModeIonicon()"></ion-icon>
+        </div>
+        <div class="toolbar-info">
+          <span class="toolbar-title">{{ getCurrentModeLabel() }}</span>
+          <span class="toolbar-sub">DAVAI Study Assistant</span>
+        </div>
+      </div>
+      <button class="clear-btn" (click)="clearChat()">
+        <ion-icon name="trash-outline"></ion-icon>
+      </button>
+    </div>
+  </ion-toolbar>
+
+  <!-- Mode strip -->
+  <div class="mode-strip">
+    <button
+      class="mode-chip"
+      *ngFor="let m of chatModes"
+      [class.active]="m.id === currentMode()"
+      (click)="setMode(m.id)">
+      <ion-icon [name]="m.ionicon"></ion-icon>
+      {{ m.label }}
+    </button>
+  </div>
+</ion-header>
+
+<ion-content class="chat-content" [scrollY]="true">
+
+  <!-- Empty state -->
+  <div class="chat-empty" *ngIf="messages().length === 0 && !isLoading()">
+    <div class="empty-icon-box">
+      <ion-icon [name]="getCurrentModeIonicon()"></ion-icon>
+    </div>
+    <h2>{{ getCurrentModeLabel() }}</h2>
+    <p>Ask anything. I coach and guide — never write for you.</p>
+
+    <div class="suggestions">
+      <button class="suggestion-btn" (click)="quickSend('How do I structure a TOK essay?')">
+        How do I structure a TOK essay?
+      </button>
+      <button class="suggestion-btn" (click)="quickSend('IELTS Writing Task 2 tips for band 7+')">
+        IELTS Writing Task 2 band 7+ tips
+      </button>
+      <button class="suggestion-btn" (click)="quickSend('What are the IB IA assessment criteria?')">
+        IB IA assessment criteria
+      </button>
+      <button class="suggestion-btn" (click)="quickSend('How do I write a strong Extended Essay research question?')">
+        Extended Essay research question
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="msg-list" *ngIf="messages().length > 0">
+    <div class="msg-row"
+         *ngFor="let msg of messages(); trackBy: trackById"
+         [class.user-row]="msg.role === 'user'">
+
+      <div class="msg-avatar" *ngIf="msg.role === 'assistant'">D</div>
+
+      <div class="bubble-col" [class.user-col]="msg.role === 'user'">
+        <div class="bubble" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+          <span *ngIf="msg.role === 'user'">{{ msg.content }}</span>
+          <span *ngIf="msg.role === 'assistant'" class="md-body" [innerHTML]="renderMarkdown(msg.content)"></span>
+        </div>
+        <span class="msg-time">{{ formatTime(msg.timestamp) }}</span>
+      </div>
+
+      <div class="msg-avatar user-av" *ngIf="msg.role === 'user'">{{ initials() }}</div>
+    </div>
+
+    <!-- Typing -->
+    <div class="msg-row" *ngIf="isLoading()">
+      <div class="msg-avatar">D</div>
+      <div class="typing">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <div #scrollEnd></div>
+  </div>
+
+</ion-content>
+
+<div class="chat-footer">
+  <div class="input-row">
+    <div class="input-box" [class.focused]="inputFocused">
+      <textarea
+        class="chat-textarea"
+        placeholder="Ask about IB, IELTS, TOK..."
+        [(ngModel)]="inputText"
+        (keydown)="onKeydown($event)"
+        (focus)="inputFocused=true"
+        (blur)="inputFocused=false"
+        rows="1"
+        maxlength="2000">
+      </textarea>
+    </div>
+    <button class="send-btn" (click)="send()" [disabled]="!inputText.trim() || isLoading()">
+      <ion-icon *ngIf="!isLoading()" name="arrow-up"></ion-icon>
+      <ion-spinner *ngIf="isLoading()" name="crescent"></ion-spinner>
+    </button>
+  </div>
+  <div class="footer-hint">Academic integrity first — DAVAI coaches, never writes for you.</div>
+</div>

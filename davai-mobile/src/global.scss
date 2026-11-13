@@ -1,0 +1,164 @@
+@use "theme/variables";
+
+@import "@ionic/angular/css/core.css";
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; pointer-events: auto; }
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--ion-font-family);
+  -webkit-font-smoothing: antialiased;
+}
+
+ion-app    { background: var(--bg-primary); }
+ion-content { --background: var(--bg-primary); }
+
+ion-toolbar {
+  --background: var(--bg-secondary);
+  --border-color: var(--separator);
+  --color: var(--text-primary);
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+ion-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+// ── Tab Bar ──────────────────────────────────────────────────
+ion-tab-bar {
+  --background: rgba(28,28,30,0.96);
+  border-top: 0.5px solid var(--separator);
+  height: 50px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+ion-tab-button {
+  --color:          var(--text-tertiary);
+  --color-selected: var(--davai-accent);
+  --background:     transparent;
+
+  ion-label { font-size: 0.6rem; font-weight: 500; margin-top: 2px; }
+  ion-icon   { font-size: 1.3rem; }
+}
+
+// ── Cards/Items ──────────────────────────────────────────────
+ion-list { background: transparent !important; padding: 0 !important; }
+
+ion-item {
+  --background: var(--bg-secondary);
+  --border-color: var(--separator);
+  --color: var(--text-primary);
+  --min-height: 44px;
+}
+
+ion-card {
+  --background: var(--bg-secondary);
+  border-radius: 12px;
+  margin: 0 0 12px;
+  box-shadow: none;
+}
+
+// ── Buttons ──────────────────────────────────────────────────
+ion-button {
+  --border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  height: 48px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+ion-fab-button {
+  --background: var(--davai-accent);
+  --color: #000000;
+  --box-shadow: 0 2px 12px rgba(255,255,255,0.2);
+}
+
+// ── Modals ───────────────────────────────────────────────────
+.alert-wrapper {
+  background: var(--bg-secondary) !important;
+  border-radius: 14px !important;
+  .alert-title   { color: var(--text-primary) !important; font-weight: 600; }
+  .alert-message { color: var(--text-secondary) !important; }
+  .alert-button  { color: var(--davai-accent) !important; }
+  .alert-button.alert-button-role-destructive { color: var(--ios-red) !important; }
+}
+
+ion-modal  { --background: var(--bg-secondary); }
+ion-toast  { --background: var(--bg-tertiary); --color: var(--text-primary); --border-radius: 10px; }
+ion-spinner { color: var(--davai-accent); }
+
+// ── Refresher ────────────────────────────────────────────────
+ion-refresher-content { --color: var(--davai-accent); }
+
+// ── Section header ───────────────────────────────────────────
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 16px 8px;
+
+  h2 {
+    font-size: 0.72rem; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.05em; margin: 0;
+  }
+
+  button {
+    background: none; border: none; color: var(--text-secondary);
+    font-size: 0.82rem; font-weight: 500;
+    font-family: var(--ion-font-family); cursor: pointer; padding: 0;
+  }
+}
+
+// ── Empty state ──────────────────────────────────────────────
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 64px 32px; text-align: center; gap: 8px;
+  ion-icon { font-size: 2.5rem; color: var(--text-tertiary); margin-bottom: 4px; }
+  h3 { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0; }
+  p  { font-size: 0.85rem; color: var(--text-secondary); margin: 0; max-width: 240px; line-height: 1.4; }
+}
+
+// ── Shared accent button ─────────────────────────────────────
+.btn-accent {
+  background: var(--davai-accent); color: #000;
+  border: none; border-radius: 12px; height: 50px;
+  font-size: 0.95rem; font-weight: 700;
+  font-family: var(--ion-font-family); cursor: pointer;
+  width: 100%; display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.15s;
+  &:disabled { opacity: 0.3; }
+  &:not(:disabled):active { opacity: 0.8; }
+}
+
+.btn-ghost-border {
+  background: none; color: var(--text-primary);
+  border: 0.5px solid var(--separator); border-radius: 12px; height: 50px;
+  font-size: 0.92rem; font-weight: 500;
+  font-family: var(--ion-font-family); cursor: pointer; width: 100%;
+  &:active { background: var(--bg-tertiary); }
+}
+
+// ── Native input reset ───────────────────────────────────────
+input, textarea, select {
+  font-family: var(--ion-font-family);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  border: none;
+}
+
+::-webkit-scrollbar { width: 0; height: 0; }

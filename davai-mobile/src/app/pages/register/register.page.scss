@@ -1,0 +1,94 @@
+:host { --ion-background-color: var(--bg-primary); }
+.auth-content { --background: var(--bg-primary); }
+
+.auth-wrap {
+  min-height: 100%; padding: calc(16px + env(safe-area-inset-top,0px)) 20px 40px;
+  display: flex; flex-direction: column;
+}
+
+.back-btn {
+  width: 36px; height: 36px; background: var(--bg-secondary); border: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-primary); cursor: pointer; margin-bottom: 24px;
+  ion-icon { font-size: 1rem; }
+}
+
+.auth-brand { margin-bottom: 20px; }
+.brand-wordmark {
+  font-size: 1.3rem; font-weight: 800; color: var(--text-primary); letter-spacing: 0.14em;
+}
+
+.auth-head {
+  margin-bottom: 24px;
+  h1 { font-size: 1.6rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.025em; margin: 0 0 6px; }
+  p  { font-size: 0.88rem; color: var(--text-secondary); margin: 0; }
+}
+
+.error-box {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,69,58,0.1); border-radius: 10px;
+  padding: 11px 14px; margin-bottom: 14px;
+  color: var(--ios-red); font-size: 0.85rem;
+  ion-icon { font-size: 1rem; flex-shrink: 0; }
+}
+
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.form-group label { font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); }
+
+.input-wrap {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-secondary); border-radius: 11px;
+  border: 0.5px solid var(--separator); padding: 0 14px; height: 48px;
+  transition: border-color 0.15s;
+  &.focused { border-color: var(--text-primary); }
+  ion-icon { color: var(--text-tertiary); font-size: 1rem; flex-shrink: 0; }
+  input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text-primary); font-size: 0.92rem; font-family: var(--ion-font-family); height: 100%;
+    &::placeholder { color: var(--text-tertiary); }
+    &:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0 100px var(--bg-secondary) inset;
+      -webkit-text-fill-color: var(--text-primary);
+    }
+  }
+}
+
+.eye-btn { background: none; border: none; color: var(--text-tertiary); padding: 0; cursor: pointer; display: flex; align-items: center; ion-icon { font-size: 1rem; } }
+
+.seg-row { display: flex; gap: 8px; }
+.seg-btn {
+  flex: 1; height: 40px; background: var(--bg-secondary);
+  border: 0.5px solid var(--separator); border-radius: 10px;
+  color: var(--text-secondary); font-size: 0.88rem; font-weight: 500;
+  font-family: var(--ion-font-family); cursor: pointer; transition: all 0.15s;
+  &.active { background: var(--text-primary); color: #000; font-weight: 700; border-color: var(--text-primary); }
+}
+
+.btn-primary {
+  width: 100%; height: 50px; background: var(--text-primary); color: #000;
+  border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 700;
+  font-family: var(--ion-font-family); cursor: pointer; margin-top: 6px;
+  display: flex; align-items: center; justify-content: center; transition: opacity 0.15s;
+  &:disabled { opacity: 0.3; }
+  &:not(:disabled):active { opacity: 0.8; }
+  ion-spinner { --color: #000; width: 20px; height: 20px; }
+}
+
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  color: var(--text-tertiary); font-size: 0.78rem; margin: 12px 0;
+  &::before, &::after { content: ''; flex: 1; height: 0.5px; background: var(--separator); }
+}
+
+.btn-secondary {
+  width: 100%; height: 50px; background: var(--bg-secondary); color: var(--text-primary);
+  border: 0.5px solid var(--separator); border-radius: 12px;
+  font-size: 0.92rem; font-weight: 500; font-family: var(--ion-font-family); cursor: pointer;
+  &:active { background: var(--bg-tertiary); }
+}
+
+.auth-foot {
+  display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 18px; font-size: 0.85rem;
+  span { color: var(--text-secondary); }
+  button { background: none; border: none; color: var(--text-primary); font-size: 0.85rem; font-weight: 600; font-family: var(--ion-font-family); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+}

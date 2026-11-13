@@ -1,0 +1,400 @@
+================================================================================
+  DAVAI — Complete Setup & Usage Guide
+  Production Delivery Package
+================================================================================
+
+Version      : 1.0.0
+Prepared for : Client Delivery
+Date         : October 2026
+Stack        : Python 3 + Node.js 18+ + Ionic Angular + SQLite
+
+================================================================================
+  WHAT IS INCLUDED
+================================================================================
+
+DAVAI-PRODUCTION/
+├── proxy.py                     Web server + AI proxy (Python, no deps)
+├── admin_backend.py             Admin panel API (SQLite)
+├── admin/                       Admin panel (browser-based dashboard)
+│   ├── index.html               Main dashboard
+│   ├── login.html               Admin login
+│   └── setup.html               First-time admin account setup
+├── assets/                      Website static files (CSS, JS, images, video)
+├── index.html                   Public website homepage
+├── podcasts.html                Study podcasts page
+├── privacy.html                 Privacy policy page
+├── 404.html                     Custom 404 error page
+├── manifest.json                PWA manifest
+├── favicon.ico                  Site icon
+├── make_pro_code.py             Pro plan code generator
+├── start_server.sh              One-command startup script
+├── davai-mobile/                Mobile app source code
+│   ├── src/                     Ionic Angular source
+│   ├── backend/                 Node.js API server
+│   │   ├── server.js            Express server entry point
+│   │   ├── db.js                SQLite database setup
+│   │   ├── routes/              API route handlers
+│   │   ├── middleware/          Auth middleware
+│   │   └── .env                 Environment config (EDIT THIS)
+│   ├── connection.json          APK/AAB build config (EDIT THIS)
+│   ├── build-apk.sh             Android APK builder
+│   ├── build-aab.sh             Google Play AAB builder
+│   └── BUILD.txt                Android build documentation
+
+================================================================================
+  REQUIREMENTS
+================================================================================
+
+  Python 3.9+     (pre-installed on macOS)
+  Node.js 18+     https://nodejs.org/
+  npm 9+          (comes with Node.js)
+
+  For mobile app development (optional):
+  Java 17+        brew install openjdk@17
+  Android SDK     Auto-installed by build scripts
+
+  Verify installed versions:
+    python3 --version
+    node --version
+    npm --version
+
+================================================================================
+  STEP 1 — CONFIGURE ENVIRONMENT
+================================================================================
+
+  Edit: davai-mobile/backend/.env
+
+  Required fields:
+
+  JWT_SECRET
+    A random secret string for signing user login tokens.
+    Generate one: python3 -c "import secrets; print(secrets.token_hex(32))"
+    Example: JWT_SECRET=a3f8c2d91e4b7a6f...
+
+  ANTHROPIC_API_KEY
+    Your AI API key.
+    Get one at: https://app.claude.gg or https://console.anthropic.com
+    Example: ANTHROPIC_API_KEY=sk-ant-abc123...
+
+  ANTHROPIC_BASE_URL
+    AI provider base URL.
+    Default: https://app.claude.gg/v1
+    For official Anthropic: https://api.anthropic.com/v1
+
+  ACTIVE_MODEL
+    AI model to use.
+    Options: claude-haiku-5-5, claude-sonnet-4-5, claude-sonnet-4-6
+    Default: claude-sonnet-4-5
+
+  PORT
+    Backend port. Default: 3000. Do not change unless port conflict.
+
+  ADMIN_SECRET
+    Internal secret for admin operations. Change to something random.
+
+================================================================================
+  STEP 2 — INSTALL DEPENDENCIES
+================================================================================
+
+  The web server (proxy.py) has zero dependencies — Python standard library only.
+
+  Install Node.js dependencies for the mobile app backend:
+
+    cd davai-mobile/backend
+    npm install
+
+  Install Ionic Angular dependencies for mobile app development:
+
+    cd davai-mobile
+    npm install
+
+  You only need to do this once after unpacking the project.
+
+================================================================================
+  STEP 3 — START SERVERS
+================================================================================
+
+  Option A — Automatic (recommended):
+
+    chmod +x start_server.sh
+    ./start_server.sh
+
+  Option B — Manual (two terminal windows):
+
+    Terminal 1 — Web server:
+      python3 proxy.py
+
+    Terminal 2 — App backend:
+      cd davai-mobile/backend
+      node server.js
+
+  Both servers must be running for full functionality.
+
+  Running services:
+    http://localhost:5050  — Public website
+    http://localhost:3000  — Mobile app API
+
+================================================================================
+  STEP 4 — ADMIN PANEL FIRST-TIME SETUP
+================================================================================
+
+  1. Open: http://localhost:5050/admin/
+  2. You will be redirected to the setup page automatically.
+  3. Create your admin account (username + password).
+     Password must be 8+ characters.
+  4. After setup, log in with your credentials.
+  5. The setup page is permanently disabled after first use.
+
+  Admin panel sections:
+    Dashboard     — Overview statistics (users, payments, codes)
+    Users         — View, create, edit, delete user accounts
+    Payments      — Approve or reject payment requests
+    Pro Codes     — Generate and manage Pro plan activation codes
+    Site Editor   — Edit website colors, text, buttons in real time
+    Settings      — AI configuration, rate limits, admin password
+    Logs          — Rate limiting activity
+
+================================================================================
+  STEP 5 — CONFIGURE AI (Admin Panel)
+================================================================================
+
+  1. Log into admin panel: http://localhost:5050/admin/
+  2. Go to Settings → AI Configuration
+  3. Enter:
+     - API Base URL (e.g. https://app.claude.gg/v1)
+     - API Key (your key)
+     - Active Model (select from dropdown)
+  4. Set rate limits:
+     - Max Tokens / Reply (recommended: 600-800)
+     - Free plan limit (messages per hour)
+     - Pro plan limit
+     - Pro Max plan limit
+  5. Click Save Changes.
+  6. Click Test Connection to verify.
+
+  These settings override .env values immediately — no restart required.
+
+================================================================================
+  STEP 6 — GENERATE PRO PLAN CODES
+================================================================================
+
+  Method A — Admin Panel (recommended):
+    1. Admin Panel → Pro Codes → Generate New Code
+    2. Select plan: Pro or Pro Max
+    3. Copy code and give to user.
+    4. When a user redeems it in the app, their account upgrades automatically.
+
+  Method B — Command line:
+    python3 make_pro_code.py pro
+    python3 make_pro_code.py pro_max
+
+================================================================================
+  STEP 7 — CUSTOMIZE THE WEBSITE (Admin Panel)
+================================================================================
+
+  1. Admin Panel → Site Editor
+  2. Edit any of the following:
+     - Background and surface colors
+     - Text colors
+     - Primary button background, text color, label
+     - Secondary button style
+     - Navbar logo colors
+     - Hero section title and subtitle
+     - CTA section title and subtitle
+     - Features section heading
+     - Footer text
+  3. Click Save All Changes.
+  4. Click Preview Site to see the result.
+
+  Changes apply immediately when visitors reload the page.
+
+================================================================================
+  MOBILE APP — LOCAL DEVELOPMENT
+================================================================================
+
+  Run the Ionic app in browser (development):
+
+    cd davai-mobile
+    npm install          (first time only)
+    npx ionic serve
+
+  Opens at: http://localhost:8100
+  Use Chrome DevTools → phone icon → iPhone 14 Pro for mobile view.
+
+  The app connects to the backend at http://localhost:3000 by default.
+
+================================================================================
+  MOBILE APP — BUILD FOR ANDROID
+================================================================================
+
+  See: davai-mobile/BUILD.txt for full documentation.
+
+  Quick start:
+
+  1. Edit davai-mobile/connection.json:
+     - appId: your app package name (e.g. com.yourname.app)
+     - appName: display name
+     - versionName / versionCode: version numbers
+     - backendUrl: your live server URL
+     - signingConfig: strong passwords (change from CHANGE_ME)
+
+  2. Build APK (direct install on Android):
+     cd davai-mobile
+     chmod +x build-apk.sh
+     ./build-apk.sh
+     Output: davai-mobile/dist/DAVAI-v1.0.0.apk
+
+  3. Build AAB (Google Play Store):
+     chmod +x build-aab.sh
+     ./build-aab.sh
+     Output: davai-mobile/dist/DAVAI-v1.0.0.aab
+
+  Scripts automatically:
+  - Install Android SDK if missing
+  - Generate keystore if missing
+  - Set production backend URL
+  - Build and sign the package
+
+================================================================================
+  DEPLOYING ONLINE
+================================================================================
+
+  Option A — Render.com (recommended, free tier):
+
+    1. Push project to GitHub (without node_modules, .env, data/)
+    2. Create new Web Service on render.com
+    3. Build command:  (none — Python has no build step)
+    4. Start command:  python3 proxy.py
+    5. Set environment variables in Render dashboard:
+         ANTHROPIC_API_KEY = your-key
+         DAVAI_PLAN_SECRET = random-secret-string
+    6. For Node backend, create a second Web Service:
+         Root directory: davai-mobile/backend
+         Build command:  npm install
+         Start command:  node server.js
+         Environment:    copy from .env file
+
+  Option B — VPS (DigitalOcean, Hetzner, etc.):
+
+    1. SSH into server
+    2. Install Python 3.9+ and Node.js 18+
+    3. Clone or upload project files
+    4. cd /path/to/DAVAI
+    5. pip3 is not needed — proxy.py has no Python deps
+    6. cd davai-mobile/backend && npm install
+    7. Use PM2 to keep servers running:
+         npm install -g pm2
+         pm2 start proxy.py --interpreter python3 --name davai-web
+         pm2 start davai-mobile/backend/server.js --name davai-api
+         pm2 save
+         pm2 startup
+    8. Set up Nginx reverse proxy to port 5050
+
+  After deploying online:
+  - Update ANTHROPIC_BASE_URL and API key in Render/server env vars
+  - Update davai-mobile/connection.json backendUrl to your live server URL
+  - Rebuild APK/AAB with the live backend URL
+
+================================================================================
+  DATA & STORAGE
+================================================================================
+
+  All data is stored in SQLite databases — no external database required.
+
+  data/admin.db            Admin accounts, users, payments, pro codes, site config
+  davai-mobile/backend/    (created automatically on first run)
+  data/davai.db            App user accounts, homework, payment records
+
+  Backup: copy the entire data/ directory.
+  Restore: replace the data/ directory with your backup.
+
+  These files are excluded from git by .gitignore.
+  Back them up regularly in production.
+
+================================================================================
+  STOPPING SERVERS
+================================================================================
+
+  If started with start_server.sh, the PIDs are printed at startup:
+
+    kill <PROXY_PID> <BACKEND_PID>
+
+  Or kill by port:
+
+    lsof -ti:5050 | xargs kill -9
+    lsof -ti:3000 | xargs kill -9
+
+================================================================================
+  COMMON ISSUES
+================================================================================
+
+  "Port already in use":
+    lsof -ti:5050 | xargs kill -9
+    lsof -ti:3000 | xargs kill -9
+    Then restart.
+
+  "ModuleNotFoundError" / "Cannot find module":
+    cd davai-mobile/backend
+    npm install
+
+  "AI not responding":
+    1. Check API key in admin panel → Settings → AI Configuration
+    2. Click Test Connection
+    3. Verify ANTHROPIC_BASE_URL is correct
+
+  Admin panel shows no data:
+    Ensure both servers are running (proxy.py AND node server.js).
+    The admin panel reads from both SQLite databases.
+
+  "Cannot find module 'better-sqlite3'":
+    cd davai-mobile/backend
+    npm install better-sqlite3 --build-from-source
+
+  White screen on mobile app:
+    Ensure Node backend is running on port 3000.
+    Check: curl http://localhost:3000/health
+
+  Payment not approving:
+    Admin Panel → Payments → click Approve on the pending payment.
+    The user's plan upgrades automatically.
+
+================================================================================
+  SECURITY CHECKLIST
+================================================================================
+
+  Before going live:
+
+  [ ] Change JWT_SECRET in .env (use python3 -c "import secrets; print(secrets.token_hex(32))")
+  [ ] Change ADMIN_SECRET in .env
+  [ ] Set strong admin panel password (Admin Panel → Settings → Change Password)
+  [ ] Change keystore passwords in connection.json (if building APK/AAB)
+  [ ] Add .env, data/, davai-release.keystore to .gitignore
+  [ ] Set ANTHROPIC API key usage limits at console.anthropic.com
+  [ ] Use HTTPS in production (Render / Nginx with Let's Encrypt)
+
+================================================================================
+  QUICK REFERENCE
+================================================================================
+
+  Start everything:          ./start_server.sh
+  Website:                   http://localhost:5050
+  Admin panel:               http://localhost:5050/admin/
+  App backend health:        http://localhost:3000/health
+  Site config (public):      http://localhost:5050/site-config.json
+  Mobile app (dev):          cd davai-mobile && npx ionic serve
+  Build APK:                 cd davai-mobile && ./build-apk.sh
+  Build AAB:                 cd davai-mobile && ./build-aab.sh
+  Generate Pro code:         python3 make_pro_code.py pro
+  View proxy logs:           tail -f /tmp/davai-proxy.log
+  View backend logs:         tail -f /tmp/davai-backend.log
+
+================================================================================
+  SUPPORT
+================================================================================
+
+  For technical questions about this project, contact the developer.
+  Android build documentation: davai-mobile/BUILD.txt
+
+================================================================================
+  END OF GUIDE
+================================================================================

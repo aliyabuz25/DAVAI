@@ -1,0 +1,27 @@
+<ion-content>
+  <div class="done-wrap">
+    <div class="done-icon">
+      <ion-icon name="checkmark-circle"></ion-icon>
+    </div>
+    <h1>Submitted</h1>
+    <p>Your transfer confirmation has been received. We'll verify and activate your plan within <strong>24 hours</strong>.</p>
+    <div class="steps">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <span>Transfer sent by you</span>
+        <div class="step-check done"><ion-icon name="checkmark-circle"></ion-icon></div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <span>Manual verification by us</span>
+        <div class="step-check pending"></div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <span>Plan activated on your account</span>
+        <div class="step-check pending"></div>
+      </div>
+    </div>
+    <button class="primary-btn" (click)="goHome()">Back to Profile</button>
+  </div>
+</ion-content>

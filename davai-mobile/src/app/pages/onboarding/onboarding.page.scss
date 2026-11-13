@@ -1,0 +1,135 @@
+:host { --ion-background-color: var(--bg-primary); }
+
+.onboarding-content {
+  --background: var(--bg-primary);
+  --overflow: hidden;
+}
+
+// ── Full height layout ───────────────────────────────────────
+// ion-content fills viewport; we use a flex column inside
+.onboarding-content::part(scroll) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+// ── Slides — take all available space ────────────────────────
+.slides-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 0 28px;
+  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+  opacity: 0; transform: translateX(100%); pointer-events: none;
+
+  &.active  { opacity: 1; transform: translateX(0);    pointer-events: auto; }
+  &.prev    { opacity: 0; transform: translateX(-100%); }
+  &.next    { opacity: 0; transform: translateX(100%);  }
+}
+
+// ── 3D Emoji ─────────────────────────────────────────────────
+.slide-emoji {
+  width: 110px; height: 110px;
+  margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: center;
+
+  img {
+    width: 100%; height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.5));
+    user-select: none; -webkit-user-drag: none;
+  }
+}
+
+// ── Brand wordmark ───────────────────────────────────────────
+.brand-wordmark {
+  font-size: 0.8rem; font-weight: 800; color: var(--text-tertiary);
+  letter-spacing: 0.22em; text-transform: uppercase;
+  margin-bottom: 16px; display: block;
+}
+
+// ── Slide text ───────────────────────────────────────────────
+.slide-text {
+  text-align: center;
+
+  h1 {
+    font-size: 1.65rem; font-weight: 700; color: var(--text-primary);
+    letter-spacing: -0.03em; margin: 0 0 12px; line-height: 1.15;
+  }
+  p {
+    font-size: 0.9rem; color: var(--text-secondary);
+    line-height: 1.55; margin: 0; max-width: 300px;
+  }
+}
+
+// ── Bottom area — pinned to bottom ───────────────────────────
+.bottom-area {
+  flex-shrink: 0;
+  padding: 0 24px calc(20px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 0;
+}
+
+// ── Dots ─────────────────────────────────────────────────────
+.dots-row {
+  display: flex; justify-content: center; gap: 6px;
+  padding: 16px 0 20px;
+}
+
+.dot {
+  width: 5px; height: 5px; border-radius: 99px;
+  background: var(--bg-quaternary); cursor: pointer; transition: all 0.25s;
+  &.active { width: 18px; background: var(--text-primary); }
+}
+
+// ── CTA block ────────────────────────────────────────────────
+.cta-block {
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+// ── Nav row ──────────────────────────────────────────────────
+.nav-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0;
+}
+
+// ── Buttons ──────────────────────────────────────────────────
+.btn-primary {
+  width: 100%; height: 52px;
+  background: var(--text-primary); color: #000;
+  border: none; border-radius: 14px;
+  font-size: 0.95rem; font-weight: 700;
+  font-family: var(--ion-font-family); cursor: pointer;
+  transition: opacity 0.15s;
+  &:active { opacity: 0.8; }
+}
+
+.btn-secondary {
+  width: 100%; height: 52px;
+  background: var(--bg-secondary); color: var(--text-primary);
+  border: 0.5px solid var(--separator); border-radius: 14px;
+  font-size: 0.95rem; font-weight: 500;
+  font-family: var(--ion-font-family); cursor: pointer;
+  &:active { background: var(--bg-tertiary); }
+}
+
+.btn-ghost {
+  background: none; border: none; color: var(--text-secondary);
+  font-size: 0.88rem; font-weight: 500;
+  font-family: var(--ion-font-family); cursor: pointer; padding: 8px 0;
+}
+
+.btn-next {
+  width: 54px; height: 54px; border-radius: 50%;
+  background: var(--text-primary); color: #000; border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 2px 12px rgba(255,255,255,0.12);
+  &:active { opacity: 0.85; }
+  ion-icon { font-size: 1.2rem; }
+}

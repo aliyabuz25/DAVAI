@@ -1,0 +1,80 @@
+:root {
+  // ── Brand ─────────────────────────────────────────────────
+  --davai-accent:        #ffffff;
+  --davai-accent-dim:    rgba(255,255,255,0.7);
+  --davai-accent-soft:   rgba(255,255,255,0.08);
+  --davai-accent-border: rgba(255,255,255,0.15);
+
+  // ── iOS Dark Surfaces ─────────────────────────────────────
+  --bg-primary:          #000000;
+  --bg-secondary:        #1c1c1e;
+  --bg-tertiary:         #2c2c2e;
+  --bg-quaternary:       #3a3a3c;
+  --separator:           rgba(84,84,88,0.65);
+  --separator-opaque:    #38383a;
+
+  // ── Text ─────────────────────────────────────────────────
+  --text-primary:        #ffffff;
+  --text-secondary:      rgba(235,235,245,0.6);
+  --text-tertiary:       rgba(235,235,245,0.3);
+  --text-quaternary:     rgba(235,235,245,0.18);
+
+  // ── iOS System Colours ────────────────────────────────────
+  --ios-blue:            #0a84ff;
+  --ios-green:           #30d158;
+  --ios-red:             #ff453a;
+  --ios-orange:          #ff9f0a;
+  --ios-yellow:          #ffd60a;
+  --ios-purple:          #bf5af2;
+
+  // ── Ionic Overrides ───────────────────────────────────────
+  --ion-background-color:           var(--bg-primary);
+  --ion-background-color-rgb:       0,0,0;
+  --ion-text-color:                 var(--text-primary);
+  --ion-text-color-rgb:             255,255,255;
+
+  --ion-color-primary:              var(--davai-accent);
+  --ion-color-primary-rgb:          255,255,255;
+  --ion-color-primary-contrast:     #000000;
+  --ion-color-primary-shade:        #d0d0d0;
+  --ion-color-primary-tint:         #ffffff;
+
+  --ion-color-success:              var(--ios-green);
+  --ion-color-success-rgb:          48,209,88;
+  --ion-color-success-contrast:     #000000;
+  --ion-color-success-shade:        #28b84f;
+  --ion-color-success-tint:         #48da6e;
+
+  --ion-color-danger:               var(--ios-red);
+  --ion-color-danger-rgb:           255,69,58;
+  --ion-color-danger-contrast:      #ffffff;
+  --ion-color-danger-shade:         #d93a31;
+  --ion-color-danger-tint:          #ff5e54;
+
+  --ion-color-warning:              var(--ios-orange);
+  --ion-color-warning-rgb:          255,159,10;
+  --ion-color-warning-contrast:     #000000;
+  --ion-color-warning-shade:        #d98809;
+  --ion-color-warning-tint:         #ffac2c;
+
+  --ion-color-medium:               rgba(235,235,245,0.6);
+  --ion-color-medium-rgb:           235,235,245;
+  --ion-color-medium-contrast:      #000000;
+  --ion-color-medium-shade:         rgba(200,200,210,0.6);
+  --ion-color-medium-tint:          rgba(235,235,245,0.7);
+
+  --ion-toolbar-background:         var(--bg-secondary);
+  --ion-toolbar-color:              var(--text-primary);
+  --ion-toolbar-border-color:       var(--separator);
+
+  --ion-tab-bar-background:         var(--bg-secondary);
+  --ion-tab-bar-color:              var(--text-tertiary);
+  --ion-tab-bar-color-selected:     var(--davai-accent);
+  --ion-tab-bar-border-color:       var(--separator);
+
+  --ion-card-background:            var(--bg-secondary);
+  --ion-item-background:            var(--bg-secondary);
+  --ion-item-border-color:          var(--separator);
+
+  --ion-font-family:                -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+}

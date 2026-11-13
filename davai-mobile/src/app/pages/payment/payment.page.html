@@ -1,0 +1,186 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <div class="pay-toolbar">
+      <button class="back-btn" (click)="goBack()">
+        <ion-icon name="chevron-back"></ion-icon>
+      </button>
+      <span class="toolbar-title">{{ step() === 'info' ? 'Payment Details' : 'Confirm Transfer' }}</span>
+      <div style="width:36px"></div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="pay-wrap">
+
+    <!-- Plan summary -->
+    <div class="plan-banner">
+      <div class="plan-banner-left">
+        <span class="plan-banner-name">{{ plan.name }}</span>
+        <span class="plan-banner-desc">DAVAI {{ plan.name }} Plan</span>
+      </div>
+      <div class="plan-banner-price">
+        <span class="price-amt">{{ plan.price }}</span>
+        <span class="price-per">{{ plan.period }}</span>
+      </div>
+    </div>
+
+    <!-- STEP 1: Recipient info -->
+    <ng-container *ngIf="step() === 'info'">
+
+      <div class="section-label">Transfer to</div>
+
+      <div class="recipient-card">
+
+        <!-- Name -->
+        <div class="recipient-row">
+          <div class="recipient-row-left">
+            <span class="rr-label">Recipient</span>
+            <span class="rr-value">{{ recipient.name }}</span>
+          </div>
+        </div>
+
+        <div class="row-sep"></div>
+
+        <!-- Bank -->
+        <div class="recipient-row">
+          <div class="recipient-row-left">
+            <span class="rr-label">Bank</span>
+            <span class="rr-value">{{ recipient.bank }}</span>
+          </div>
+        </div>
+
+        <div class="row-sep"></div>
+
+        <!-- Card -->
+        <div class="recipient-row" (click)="copy(recipient.card, 'Card number')">
+          <div class="recipient-row-left">
+            <span class="rr-label">Card Number</span>
+            <span class="rr-value mono">{{ recipient.card }}</span>
+          </div>
+          <div class="copy-btn" [class.copied]="copied() === 'Card number'">
+            <ion-icon [name]="copied() === 'Card number' ? 'checkmark-circle' : 'copy-outline'"></ion-icon>
+          </div>
+        </div>
+
+        <div class="row-sep"></div>
+
+        <!-- IBAN -->
+        <div class="recipient-row" (click)="copy(recipient.iban, 'IBAN')">
+          <div class="recipient-row-left">
+            <span class="rr-label">IBAN</span>
+            <span class="rr-value mono small">{{ recipient.iban }}</span>
+          </div>
+          <div class="copy-btn" [class.copied]="copied() === 'IBAN'">
+            <ion-icon [name]="copied() === 'IBAN' ? 'checkmark-circle' : 'copy-outline'"></ion-icon>
+          </div>
+        </div>
+
+        <div class="row-sep"></div>
+
+        <!-- Amount -->
+        <div class="recipient-row" (click)="copy(plan.usd.toString(), 'Amount')">
+          <div class="recipient-row-left">
+            <span class="rr-label">Amount</span>
+            <span class="rr-value">{{ plan.price }} USD</span>
+          </div>
+          <div class="copy-btn" [class.copied]="copied() === 'Amount'">
+            <ion-icon [name]="copied() === 'Amount' ? 'checkmark-circle' : 'copy-outline'"></ion-icon>
+          </div>
+        </div>
+
+        <div class="row-sep"></div>
+
+        <!-- Note -->
+        <div class="recipient-row" (click)="copy(transferNote, 'Note')">
+          <div class="recipient-row-left">
+            <span class="rr-label">Transfer Note</span>
+            <span class="rr-value">{{ transferNote }}</span>
+          </div>
+          <div class="copy-btn" [class.copied]="copied() === 'Note'">
+            <ion-icon [name]="copied() === 'Note' ? 'checkmark-circle' : 'copy-outline'"></ion-icon>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="notice">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <p>Make the transfer from your banking app using the card number or IBAN above. Include the note so we can identify your payment.</p>
+      </div>
+
+      <!-- Sender name -->
+      <div class="section-label">Your details</div>
+
+      <div class="field-group">
+        <label>Your Name (as on transfer)</label>
+        <input
+          class="field-input"
+          type="text"
+          placeholder="e.g. David Salahov"
+          [(ngModel)]="senderName"
+        />
+      </div>
+
+      <div class="field-group">
+        <label>Reference / Note (optional)</label>
+        <input
+          class="field-input"
+          type="text"
+          placeholder="e.g. order number, email"
+          [(ngModel)]="senderRef"
+        />
+      </div>
+
+      <button class="primary-btn" (click)="goNext()" [disabled]="!senderName.trim()">
+        I've Made the Transfer
+      </button>
+
+      <p class="small-note">After confirming, we'll verify your transfer manually and activate your plan within 24 hours.</p>
+
+    </ng-container>
+
+    <!-- STEP 2: Confirm -->
+    <ng-container *ngIf="step() === 'confirm'">
+
+      <div class="confirm-card">
+        <div class="confirm-icon">
+          <ion-icon name="checkmark-circle"></ion-icon>
+        </div>
+        <h2>Almost there</h2>
+        <p>We'll verify your transfer and activate <strong>{{ plan.name }}</strong> within 24 hours.</p>
+      </div>
+
+      <div class="confirm-summary">
+        <div class="cs-row">
+          <span class="cs-label">Plan</span>
+          <span class="cs-value">{{ plan.name }}</span>
+        </div>
+        <div class="row-sep"></div>
+        <div class="cs-row">
+          <span class="cs-label">Amount</span>
+          <span class="cs-value">{{ plan.price }} USD</span>
+        </div>
+        <div class="row-sep"></div>
+        <div class="cs-row">
+          <span class="cs-label">Your name</span>
+          <span class="cs-value">{{ senderName }}</span>
+        </div>
+        <div class="row-sep" *ngIf="senderRef"></div>
+        <div class="cs-row" *ngIf="senderRef">
+          <span class="cs-label">Reference</span>
+          <span class="cs-value">{{ senderRef }}</span>
+        </div>
+      </div>
+
+      <button class="primary-btn" (click)="submitConfirm()" [disabled]="loading()">
+        <ion-spinner *ngIf="loading()" name="crescent"></ion-spinner>
+        <span *ngIf="!loading()">Confirm &amp; Submit</span>
+      </button>
+
+      <button class="ghost-btn" (click)="step.set('info')">Go back</button>
+
+    </ng-container>
+
+  </div>
+</ion-content>

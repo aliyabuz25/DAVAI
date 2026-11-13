@@ -1,0 +1,121 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <div class="profile-toolbar">
+      <h1 class="page-large-title" style="padding:0">Profile</h1>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <!-- User card -->
+  <div class="user-card">
+    <div class="user-avatar-block">
+      <div class="user-avatar">{{ initials() }}</div>
+    </div>
+    <div class="user-info">
+      <h2>{{ user()?.name ?? 'Guest Student' }}</h2>
+      <p class="user-email">{{ user()?.email || 'No account' }}</p>
+      <div class="user-meta-row">
+        <span class="user-meta-item">{{ user()?.program ?? 'IB' }}</span>
+        <span class="user-meta-dot">·</span>
+        <span class="user-meta-item">{{ planLabel() }} Plan</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="section-header"><h2>Stats</h2></div>
+  <div class="stats-grid">
+    <div class="stat-box">
+      <span class="sv">{{ stats.totalTasks }}</span>
+      <span class="sl">Total Tasks</span>
+    </div>
+    <div class="stat-box">
+      <span class="sv green">{{ stats.completedTasks }}</span>
+      <span class="sl">Completed</span>
+    </div>
+    <div class="stat-box">
+      <span class="sv orange">{{ completionRate }}%</span>
+      <span class="sl">Rate</span>
+    </div>
+    <div class="stat-box">
+      <span class="sv blue">{{ stats.chatMessages }}</span>
+      <span class="sl">AI Chats</span>
+    </div>
+  </div>
+
+  <!-- Plans -->
+  <div class="section-header"><h2>Plans</h2></div>
+  <div class="plans-wrap">
+    <div class="plan-card" *ngFor="let p of plans" [class.current]="user()?.plan === p.id">
+      <div class="plan-top">
+        <div class="plan-left">
+          <span class="plan-name">{{ p.name }}</span>
+          <span class="current-tag" *ngIf="user()?.plan === p.id">Current</span>
+        </div>
+        <div class="plan-price">
+          <span class="plan-amt">{{ p.price }}</span>
+          <span class="plan-per">{{ p.period }}</span>
+        </div>
+      </div>
+      <ul class="plan-feats">
+        <li *ngFor="let f of p.features">
+          <ion-icon name="checkmark-outline"></ion-icon> {{ f }}
+        </li>
+      </ul>
+      <button class="upgrade-btn" *ngIf="user()?.plan !== p.id && p.id !== 'free'" (click)="goToPayment(p.id)">
+        Upgrade to {{ p.name }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Redeem code -->
+  <div class="section-header" *ngIf="planLabel() === 'Free'"><h2>Redeem Code</h2></div>
+  <div class="redeem-card" *ngIf="planLabel() === 'Free'">
+    <p>Have a DAVAI Pro code? Redeem it here.</p>
+    <div class="redeem-row">
+      <input class="redeem-input" type="text" placeholder="DAVAI-PRO-XXXXX" [(ngModel)]="proCode"/>
+      <button class="redeem-btn" (click)="redeemProCode()" [disabled]="!proCode.trim()">Redeem</button>
+    </div>
+  </div>
+
+  <!-- Account actions -->
+  <div class="section-header"><h2>Account</h2></div>
+  <div class="action-list">
+
+    <button class="action-row" *ngIf="!isLoggedIn()" (click)="goToLogin()">
+      <div class="action-icon-wrap">
+        <ion-icon name="log-in-outline"></ion-icon>
+      </div>
+      <span>Sign In / Register</span>
+      <ion-icon name="chevron-forward" class="row-chevron"></ion-icon>
+    </button>
+
+    <button class="action-row" *ngIf="isLoggedIn()" (click)="confirmLogout()">
+      <div class="action-icon-wrap red">
+        <ion-icon name="log-out-outline"></ion-icon>
+      </div>
+      <span>Sign Out</span>
+      <ion-icon name="chevron-forward" class="row-chevron"></ion-icon>
+    </button>
+
+    <button class="action-row danger" (click)="clearAllData()">
+      <div class="action-icon-wrap red">
+        <ion-icon name="trash-outline"></ion-icon>
+      </div>
+      <span>Clear All Local Data</span>
+      <ion-icon name="chevron-forward" class="row-chevron"></ion-icon>
+    </button>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="profile-footer">
+    <span class="footer-wordmark">DAVAI</span>
+    <p>Built by David Salahov · School No. 6, Baku</p>
+    <p>Launching Dec 15, 2026 · Free forever</p>
+    <p class="version">v2.0.5</p>
+  </div>
+
+</ion-content>

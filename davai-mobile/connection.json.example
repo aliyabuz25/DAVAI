@@ -1,0 +1,16 @@
+{
+  "appId": "com.davai.app",
+  "appName": "DAVAI",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "backendUrl": "https://your-backend.onrender.com",
+  "backendUrlLocal": "http://localhost:3000",
+  "keystoreAlias": "davai-key",
+  "keystoreFile": "davai-release.keystore",
+  "signingConfig": {
+    "storePassword": "CHANGE_ME",
+    "keyPassword": "CHANGE_ME"
+  },
+  "playStorePackageName": "com.davai.app",
+  "buildType": "release"
+}

@@ -1,0 +1,306 @@
+================================================================================
+  DAVAI Mobile — Build Documentation
+  Android APK & AAB Build Guide
+================================================================================
+
+Last updated : 2026-10-30
+App          : DAVAI (com.davai.app)
+Framework    : Ionic 8 + Angular 22 + Capacitor 8
+Build target : Android (APK for sideload / AAB for Google Play)
+
+--------------------------------------------------------------------------------
+  QUICK START
+--------------------------------------------------------------------------------
+
+1. Fill in connection.json (see section below)
+2. Run one of:
+
+   APK (sideload / direct install):
+     chmod +x build-apk.sh && ./build-apk.sh
+
+   AAB (Google Play Store upload):
+     chmod +x build-aab.sh && ./build-aab.sh
+
+3. Output files:
+     dist/DAVAI-v1.0.0.apk   ← install directly on device
+     dist/DAVAI-v1.0.0.aab   ← upload to Play Console
+
+--------------------------------------------------------------------------------
+  REQUIREMENTS
+--------------------------------------------------------------------------------
+
+macOS (Apple Silicon or Intel):
+
+  1. Java 17+
+       brew install openjdk@17
+       Add to ~/.zshrc:
+         export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
+
+  2. Node.js 18+  (already installed — v25.6.0 detected)
+
+  3. Android SDK
+       The scripts auto-install SDK components via sdkmanager.
+       Default location: ~/Library/Android/sdk
+       Required packages (auto-installed):
+         - platform-tools
+         - platforms;android-34
+         - build-tools;34.0.0
+
+  4. Optional — bundletool (for AAB validation)
+       wget https://github.com/google/bundletool/releases/latest/download/bundletool-all.jar
+       mv bundletool-all.jar ~/bundletool.jar
+
+  No Android Studio required.
+
+--------------------------------------------------------------------------------
+  connection.json — FIELD REFERENCE
+--------------------------------------------------------------------------------
+
+{
+  "appId"         : "com.davai.app"
+                    Android package name. Must match Play Console entry.
+                    Format: reverse domain (com.yourname.appname)
+                    Cannot be changed after first Play Store release.
+
+  "appName"       : "DAVAI"
+                    Display name shown on device home screen.
+
+  "versionName"   : "1.0.0"
+                    Human-readable version (e.g. "1.2.3")
+                    Shown in Play Store listing.
+
+  "versionCode"   : 1
+                    Integer — must increase with every Play Store upload.
+                    Play Store rejects same or lower versionCode.
+                    Example progression: 1, 2, 3 ... or 10, 20, 30
+
+  "backendUrl"    : "https://your-backend.onrender.com"
+                    Production backend URL (baked into the app bundle).
+                    Used in environment.prod.ts → environment.apiUrl
+                    Set this to your Render / Railway / VPS URL.
+
+  "backendUrlLocal": "http://localhost:3000"
+                    Only used for local development (ng serve).
+                    Not baked into release builds.
+
+  "keystoreAlias" : "davai-key"
+                    Alias inside the keystore file.
+                    Must match what was used when keystore was created.
+
+  "keystoreFile"  : "davai-release.keystore"
+                    Path to the keystore file (relative to build script).
+                    Generated automatically on first build if missing.
+
+  "signingConfig" : {
+    "storePassword": "CHANGE_ME"   ← Keystore file password
+    "keyPassword"  : "CHANGE_ME"   ← Key entry password (can be same)
+  }
+
+  IMPORTANT: Change default passwords before first build!
+             Use strong passwords (16+ chars, mixed).
+             Never commit connection.json with real passwords to git.
+
+  "playStorePackageName": "com.davai.app"
+                    Must match appId exactly.
+
+  "buildType"     : "release"
+                    Always "release" for production builds.
+
+--------------------------------------------------------------------------------
+  KEYSTORE — CRITICAL INFORMATION
+--------------------------------------------------------------------------------
+
+The keystore file (davai-release.keystore) is generated automatically on
+first build if it doesn't exist.
+
+RULES:
+  - Use the SAME keystore for every update to the same app.
+  - If you lose the keystore, you cannot update your Play Store app.
+    You would need to publish as a new app with a new package name.
+  - Back it up in at least 2 separate locations (cloud + external drive).
+  - Never add it to git. Add to .gitignore:
+      davai-release.keystore
+      connection.json
+
+BACKUP CHECKLIST:
+  [ ] davai-release.keystore  — the keystore file
+  [ ] keystoreAlias           — "davai-key"
+  [ ] storePassword           — your chosen password
+  [ ] keyPassword             — your chosen password
+
+--------------------------------------------------------------------------------
+  BUILD SCRIPTS — WHAT THEY DO
+--------------------------------------------------------------------------------
+
+build-apk.sh:
+  1. Reads connection.json
+  2. Installs Android SDK packages if missing
+  3. Writes environment.prod.ts with backendUrl
+  4. Updates capacitor.config.ts with appId/appName
+  5. Runs: npm install
+  6. Runs: ng build --configuration production
+  7. Runs: npx cap sync android
+  8. Patches versionCode/versionName in android/app/build.gradle
+  9. Generates keystore if missing
+  10. Writes signing config to build.gradle
+  11. Runs: ./gradlew assembleRelease
+  12. Copies APK → dist/DAVAI-v1.0.0.apk
+
+build-aab.sh:
+  Steps 1-10 identical to build-apk.sh, then:
+  11. Runs: ./gradlew bundleRelease
+  12. Copies AAB → dist/DAVAI-v1.0.0.aab
+  13. Validates with bundletool if installed
+
+--------------------------------------------------------------------------------
+  APK vs AAB — WHEN TO USE WHICH
+--------------------------------------------------------------------------------
+
+  APK (.apk)                        AAB (.aab)
+  ─────────────────────────────     ──────────────────────────────────────
+  Install directly on device        Upload to Google Play Console
+  Send via WhatsApp / Telegram      Play Store required for distribution
+  Good for testing / beta users     Smaller download for end users
+  Works offline distribution        Required for new Play Store apps (2021+)
+  adb install -r app.apk            Cannot install directly on device
+
+  For Play Store: ALWAYS use AAB.
+  For direct distribution: use APK.
+
+--------------------------------------------------------------------------------
+  INSTALLING APK ON DEVICE
+--------------------------------------------------------------------------------
+
+Via ADB (USB cable):
+  1. Enable Developer Options on Android phone
+     Settings → About Phone → tap Build Number 7 times
+  2. Enable USB Debugging
+     Settings → Developer Options → USB Debugging ON
+  3. Connect phone via USB
+  4. adb devices  (verify device listed)
+  5. adb install -r dist/DAVAI-v1.0.0.apk
+
+Via file transfer:
+  1. Copy APK to phone storage
+  2. Open Files app → find APK → tap to install
+  3. Allow "Install from unknown sources" when prompted
+
+--------------------------------------------------------------------------------
+  GOOGLE PLAY STORE UPLOAD (AAB)
+--------------------------------------------------------------------------------
+
+  1. Create Google Play Developer account
+     https://play.google.com/console
+     One-time $25 registration fee
+
+  2. Create new app
+     All apps → Create app
+     App name: DAVAI
+     Default language: English
+     App / Game: App
+     Free / Paid: Free
+
+  3. Complete store listing
+     - Short description (80 chars)
+     - Full description (4000 chars)
+     - Screenshots (phone, tablet)
+     - Feature graphic (1024 × 500)
+     - App icon (512 × 512 PNG)
+     - Category: Education
+
+  4. Upload AAB
+     Production → Releases → Create new release
+     Upload AAB file: dist/DAVAI-v1.0.0.aab
+     Release name: v1.0.0
+     Release notes: (what's new)
+
+  5. Review and submit
+     Complete all required sections
+     Submit for review (typically 1-3 days)
+
+--------------------------------------------------------------------------------
+  UPDATING THE APP
+--------------------------------------------------------------------------------
+
+  Before each new build:
+  1. Increment versionCode in connection.json  (e.g. 1 → 2)
+  2. Update versionName if needed             (e.g. "1.0.0" → "1.1.0")
+  3. Run build-aab.sh
+  4. Upload new AAB to Play Console
+
+  versionCode must ALWAYS increase — Play Store rejects same or lower values.
+
+--------------------------------------------------------------------------------
+  TROUBLESHOOTING
+--------------------------------------------------------------------------------
+
+Error: "SDK not found"
+  → Ensure ANDROID_HOME is not set to wrong path, or let script auto-install
+
+Error: "JAVA_HOME is not set"
+  → Run: export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+  → Add to ~/.zshrc for permanent fix
+
+Error: "Gradle build failed"
+  → Check android/app/build/outputs/ for detailed logs
+  → Run manually: cd android && ./gradlew assembleRelease --info
+
+Error: "versionCode must be higher"
+  → Increment versionCode in connection.json and rebuild
+
+Error: "Keystore was tampered with"
+  → Wrong password in connection.json signingConfig
+
+Error: "Package name already taken"
+  → Change appId in connection.json to a unique value
+  → Must be done before first Play Store publish
+
+Build takes too long on first run:
+  → Normal — Gradle downloads dependencies (~200MB)
+  → Subsequent builds: 1-2 minutes
+
+--------------------------------------------------------------------------------
+  FILE STRUCTURE
+--------------------------------------------------------------------------------
+
+davai-mobile/
+├── connection.json          ← Build config (EDIT THIS)
+├── build-apk.sh             ← APK build script
+├── build-aab.sh             ← AAB build script
+├── BUILD.txt                ← This file
+├── davai-release.keystore   ← Generated on first build (BACK UP!)
+├── dist/
+│   ├── DAVAI-v1.0.0.apk    ← Output APK
+│   └── DAVAI-v1.0.0.aab    ← Output AAB
+├── src/
+│   └── environments/
+│       ├── environment.ts           ← Dev config
+│       └── environment.prod.ts      ← Production (auto-written by scripts)
+├── capacitor.config.ts              ← Auto-written by scripts
+└── android/                         ← Generated by Capacitor
+    └── app/
+        └── build.gradle             ← Patched by scripts
+
+--------------------------------------------------------------------------------
+  SECURITY NOTES
+--------------------------------------------------------------------------------
+
+Add to .gitignore:
+  davai-release.keystore
+  connection.json
+  dist/
+
+Never share:
+  - Keystore file
+  - Keystore passwords
+  - connection.json (contains passwords)
+
+Safe to share:
+  - build-apk.sh
+  - build-aab.sh
+  - BUILD.txt
+  - connection.json.example (with placeholder values)
+
+================================================================================
+  END OF DOCUMENTATION
+================================================================================

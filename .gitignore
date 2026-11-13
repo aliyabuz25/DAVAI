@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.angular/
+
+# Environment & secrets
+.env
+*.env
+!.env.example
+davai-mobile/backend/.env
+davai-mobile/davai-release.keystore
+davai-mobile/connection.json
+
+# Database & user data
+data/
+davai-mobile/backend/data/
+
+# Build outputs
+davai-mobile/dist/
+davai-mobile/www/
+davai-mobile/android/
+davai-mobile/ios/
+
+# Logs
+*.log
+/tmp/
+
+# OS
+.DS_Store
+__pycache__/
+*.pyc

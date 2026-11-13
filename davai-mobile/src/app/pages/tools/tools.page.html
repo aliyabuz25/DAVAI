@@ -1,0 +1,189 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <div class="tools-toolbar">
+      <h1 class="page-large-title" style="padding:0">Study Tools</h1>
+    </div>
+  </ion-toolbar>
+  <div class="tab-strip">
+    <button class="tab-btn" [class.active]="activeTab() === 'timer'"    (click)="activeTab.set('timer')">
+      <ion-icon name="timer-outline"></ion-icon> Timer
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'vocab'"    (click)="activeTab.set('vocab')">
+      <ion-icon name="text-outline"></ion-icon> Vocab
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'criteria'" (click)="activeTab.set('criteria')">
+      <ion-icon name="list-outline"></ion-icon> Criteria
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'podcasts'" (click)="activeTab.set('podcasts')">
+      <ion-icon name="radio-outline"></ion-icon> Podcasts
+    </button>
+  </div>
+</ion-header>
+
+<ion-content>
+  <div class="tab-content">
+
+    <!-- TIMER -->
+    <div *ngIf="activeTab() === 'timer'" class="panel">
+
+      <div class="timer-card">
+        <div class="timer-state" [class.break-state]="timerState() === 'break'">
+          {{ timerState() === 'idle' ? 'Ready' : timerState() === 'work' ? 'Focus Time' : 'Break Time' }}
+        </div>
+
+        <div class="ring-wrap">
+          <svg viewBox="0 0 120 120" class="ring-svg">
+            <circle class="ring-track" cx="60" cy="60" r="52" fill="none" stroke-width="5"/>
+            <circle class="ring-prog"  cx="60" cy="60" r="52" fill="none" stroke-width="5"
+              [class.break-prog]="timerState() === 'break'"
+              [style.stroke-dasharray]="'327'"
+              [style.stroke-dashoffset]="327 - (timerProgress() * 327)"/>
+          </svg>
+          <span class="timer-num">{{ timerDisplay() }}</span>
+        </div>
+
+        <div class="timer-btns">
+          <button class="t-btn reset" (click)="resetTimer()">
+            <ion-icon name="refresh-outline"></ion-icon>
+          </button>
+          <button class="t-btn play" (click)="timerRunning ? pauseTimer() : startTimer()">
+            <ion-icon [name]="timerRunning ? 'pause' : 'play'"></ion-icon>
+          </button>
+          <div class="cycle-box">
+            <span>{{ cycle() }}</span>
+            <small>cycles</small>
+          </div>
+        </div>
+
+        <div class="timer-settings">
+          <div class="t-setting">
+            <label>Work</label>
+            <div class="stepper">
+              <button (click)="workMins = Math.max(5, workMins-5); resetTimer()">−</button>
+              <span>{{ workMins }}m</span>
+              <button (click)="workMins = Math.min(60, workMins+5); resetTimer()">+</button>
+            </div>
+          </div>
+          <div class="t-setting">
+            <label>Break</label>
+            <div class="stepper">
+              <button (click)="breakMins = Math.max(1, breakMins-1); resetTimer()">−</button>
+              <span>{{ breakMins }}m</span>
+              <button (click)="breakMins = Math.min(30, breakMins+1); resetTimer()">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-icon"><ion-icon name="information-circle-outline"></ion-icon></div>
+        <div>
+          <strong>Pomodoro Technique</strong>
+          <p>Work in 25-minute focused sessions, then take a 5-minute break. After 4 cycles, rest for 20-30 minutes.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VOCAB -->
+    <div *ngIf="activeTab() === 'vocab'" class="panel">
+
+      <div class="filter-row">
+        <button class="filter-btn" [class.active]="vocabFilter() === 'all'"   (click)="setVocabFilter('all')">All</button>
+        <button class="filter-btn" [class.active]="vocabFilter() === 'ib'"    (click)="setVocabFilter('ib')">IB</button>
+        <button class="filter-btn" [class.active]="vocabFilter() === 'ielts'" (click)="setVocabFilter('ielts')">IELTS</button>
+        <span class="filter-count">{{ (vocabIndex() % filteredVocab().length) + 1 }}/{{ filteredVocab().length }}</span>
+      </div>
+
+      <div class="flip-card" [class.flipped]="showVocabDef()" (click)="flipCard()">
+        <div class="flip-inner">
+          <div class="flip-face front">
+            <span class="word-type">{{ currentWord().type }}</span>
+            <span class="word-text">{{ currentWord().word }}</span>
+            <span class="tap-hint">Tap to reveal</span>
+            <div class="word-tags">
+              <span class="wtag ib"    *ngIf="currentWord().ib">IB</span>
+              <span class="wtag ielts" *ngIf="currentWord().ielts">IELTS</span>
+            </div>
+          </div>
+          <div class="flip-face back">
+            <span class="def-label">Definition</span>
+            <p class="def-text">{{ currentWord().definition }}</p>
+            <div class="def-divider"></div>
+            <span class="def-label">Example</span>
+            <p class="ex-text">"{{ currentWord().example }}"</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="vocab-nav">
+        <button class="nav-btn" (click)="prevWord()">
+          <ion-icon name="chevron-back"></ion-icon> Prev
+        </button>
+        <button class="nav-btn primary" (click)="nextWord()">
+          Next <ion-icon name="chevron-forward"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- CRITERIA -->
+    <div *ngIf="activeTab() === 'criteria'" class="panel">
+
+      <div class="crit-keys">
+        <button *ngFor="let k of criteriaKeys" class="crit-key"
+                [class.active]="selectedCrit() === k" (click)="selectedCrit.set(k)">
+          {{ k }}
+        </button>
+      </div>
+
+      <div class="crit-card">
+        <div class="crit-card-head">
+          <span class="crit-name">{{ selectedCrit() }}</span>
+          <span class="crit-max">Max: {{ currentCrit().maxMarks }}</span>
+        </div>
+        <div class="crit-items">
+          <div class="crit-item" *ngFor="let c of currentCrit().criteria; let i = index">
+            <div class="crit-num">{{ i + 1 }}</div>
+            <span class="crit-txt">{{ c }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-icon"><ion-icon name="bulb-outline"></ion-icon></div>
+        <div>
+          <strong>Pro Tip</strong>
+          <p>Examiners mark holistically. Aim for consistency across all criteria — one strong criterion won't compensate for a weak one.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PODCASTS -->
+    <div *ngIf="activeTab() === 'podcasts'" class="panel">
+
+      <div class="coming-soon">
+        <ion-icon name="radio-outline"></ion-icon>
+        <div>
+          <strong>Study Podcasts</strong>
+          <p>Launching December 15, 2026</p>
+        </div>
+      </div>
+
+      <div class="podcast-list">
+        <div class="podcast-row" *ngFor="let p of podcasts">
+          <div class="podcast-icon">
+            <ion-icon [name]="p.ionicon"></ion-icon>
+          </div>
+          <div class="podcast-info">
+            <span class="podcast-title">{{ p.title }}</span>
+            <div class="podcast-meta">
+              <span class="ptag">{{ p.topic }}</span>
+              <span class="pdur">{{ p.duration }}</span>
+            </div>
+          </div>
+          <ion-icon name="chevron-forward" class="row-chevron"></ion-icon>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</ion-content>
