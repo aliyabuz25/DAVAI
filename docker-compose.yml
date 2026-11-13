@@ -14,7 +14,7 @@ services:
       NODE_ENV: "production"
       JWT_SECRET: "change_this_to_a_long_random_secret_min_32_chars"
       SITE_URL: "https://davai.tech"
-      ALLOWED_ORIGINS: "https://davai.tech,https://www.davai.tech,http://davai.tech,http://www.davai.tech"
+      ALLOWED_ORIGINS: "*,https://davai.tech,https://www.davai.tech,http://davai.tech,http://www.davai.tech,capacitor://localhost,ionic://localhost,http://localhost,https://localhost"
     volumes:
       - /datastore/davai/uploads:/app/uploads
       - /datastore/davai/data:/app/data

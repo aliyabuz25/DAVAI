@@ -5,11 +5,40 @@ const path    = require('path');
 
 const app = express();
 
-// ── Middleware ────────────────────────────────────────────────
+// ── CORS & Preflight Middleware ──────────────────────────────
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => callback(null, true), // Allow all origins including APK / mobile apps (undefined)
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-DAVAI-Device',
+    'X-DAVAI-Plan',
+    'X-Admin-Token',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Cache-Control',
+    'Pragma'
+  ],
+  exposedHeaders: ['*'],
+  maxAge: 86400,
 }));
+app.options('*', cors());
+
+// Explicit CORS headers fallback for mobile APKs / WebViews
+app.use((req, res, next) => {
+  const reqOrigin = req.headers.origin || '*';
+  res.header('Access-Control-Allow-Origin', reqOrigin);
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-DAVAI-Device, X-DAVAI-Plan, X-Admin-Token, X-Requested-With, Accept, Origin, Cache-Control, Pragma');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 

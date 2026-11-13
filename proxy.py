@@ -349,23 +349,23 @@ def refund(info):
                 d[k].remove(t)
 
 CORS_HEADERS = {
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PATCH, DELETE, PUT",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-DAVAI-Device, X-DAVAI-Plan, X-Admin-Token",
-    "Access-Control-Expose-Headers": "X-DAVAI-Plan, X-DAVAI-Limit, X-DAVAI-Remaining",
-    "Access-Control-Max-Age": "600",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PATCH, DELETE, PUT, HEAD",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-DAVAI-Device, X-DAVAI-Plan, X-Admin-Token, Accept, Origin, X-Requested-With, Cache-Control, Pragma",
+    "Access-Control-Expose-Headers": "X-DAVAI-Plan, X-DAVAI-Limit, X-DAVAI-Remaining, Content-Length, Content-Type",
+    "Access-Control-Max-Age": "86400",
 }
 
-# Sent with every GET (HTML page) response so YouTube iframes work
+# Sent with every GET (HTML page) response
 PAGE_HEADERS = {
     "Content-Security-Policy": (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net; "
-        "font-src 'self' https://fonts.gstatic.com; "
-        "img-src 'self' data: blob: https://img.youtube.com https://i.ytimg.com https://*.googleapis.com https://*.ytimg.com https://upload.wikimedia.org https://cdn.jsdelivr.net; "
-        "frame-src https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com; "
-        "connect-src 'self' http://localhost:5050 https://api.anthropic.com https://formspree.io; "
-        "media-src 'self' blob: https:; "
+        "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; "
+        "script-src * 'unsafe-inline' 'unsafe-eval'; "
+        "style-src * 'unsafe-inline'; "
+        "font-src * data:; "
+        "img-src * data: blob:; "
+        "frame-src *; "
+        "connect-src *; "
+        "media-src * blob: data:; "
     ),
 }
 
@@ -555,17 +555,18 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
         print(f"[proxy] {self.address_string()} — {fmt % args}")
 
     def origin_ok(self):
-        if not ALLOWED_ORIGINS:
-            return True
-        return self.headers.get("Origin", "").rstrip("/") in ALLOWED_ORIGINS
+        # Allow all origins: mobile APKs (Capacitor/Cordova/React Native), WebViews, localhost, web browsers
+        return True
 
     def send_cors(self):
         origin = self.headers.get("Origin", "").rstrip("/")
-        if not ALLOWED_ORIGINS:
-            self.send_header("Access-Control-Allow-Origin", "*")
-        elif origin in ALLOWED_ORIGINS:
+        if origin:
             self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Access-Control-Allow-Credentials", "true")
             self.send_header("Vary", "Origin")
+        else:
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Credentials", "true")
         for k, v in CORS_HEADERS.items():
             self.send_header(k, v)
         info = getattr(self, "_plan", None)
@@ -747,8 +748,6 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
 
     # ── OPTIONS preflight ────────────────────────────────────────────
     def do_OPTIONS(self):
-        if not self.origin_ok():
-            self._forbidden(); return
         self.send_response(204)
         self.send_cors()
         self.end_headers()
