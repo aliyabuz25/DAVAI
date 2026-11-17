@@ -241,11 +241,92 @@
       align-self: flex-end;
       background-color: #27272a;
       color: #ffffff;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     .bubble-assistant {
       align-self: flex-start;
       background-color: var(--bg-surface);
       color: var(--text-main);
+      word-break: break-word;
+    }
+    .bubble-assistant p {
+      margin-bottom: 0.65rem;
+    }
+    .bubble-assistant p:last-child {
+      margin-bottom: 0;
+    }
+    .bubble-assistant strong,
+    .bubble-assistant b {
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .bubble-assistant em,
+    .bubble-assistant i {
+      color: #e4e4e7;
+      font-style: italic;
+    }
+    .bubble-assistant ul,
+    .bubble-assistant ol {
+      margin-top: 0.4rem;
+      margin-bottom: 0.65rem;
+      padding-left: 1.35rem;
+    }
+    .bubble-assistant ul:last-child,
+    .bubble-assistant ol:last-child {
+      margin-bottom: 0;
+    }
+    .bubble-assistant li {
+      margin-bottom: 0.35rem;
+    }
+    .bubble-assistant li:last-child {
+      margin-bottom: 0;
+    }
+    .bubble-assistant h1,
+    .bubble-assistant h2,
+    .bubble-assistant h3,
+    .bubble-assistant h4 {
+      color: #ffffff;
+      font-weight: 600;
+      margin-top: 0.85rem;
+      margin-bottom: 0.45rem;
+      font-size: 1rem;
+    }
+    .bubble-assistant h1:first-child,
+    .bubble-assistant h2:first-child,
+    .bubble-assistant h3:first-child,
+    .bubble-assistant h4:first-child {
+      margin-top: 0;
+    }
+    .bubble-assistant code {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: #93c5fd;
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.88em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .bubble-assistant pre {
+      background-color: #0b0c10;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 0.7rem;
+      overflow-x: auto;
+      margin-top: 0.5rem;
+      margin-bottom: 0.6rem;
+    }
+    .bubble-assistant pre code {
+      background-color: transparent;
+      padding: 0;
+      color: #e4e4e7;
+    }
+    .bubble-assistant blockquote {
+      border-left: 3px solid #6366f1;
+      padding-left: 0.75rem;
+      margin-left: 0;
+      margin-top: 0.4rem;
+      margin-bottom: 0.5rem;
+      color: #a1a1aa;
     }
 
     .prompt-chip {
@@ -911,6 +992,9 @@
   <!-- Bootstrap 5.3 JS -->
   <script src="/assets/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Marked Markdown Parser -->
+  <script src="/assets/js/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <!-- Comprehensive Study Assistant & Interactive Scripts -->
   <script>
@@ -946,12 +1030,128 @@
       `;
     }
 
+    function renderMarkdown(raw) {
+      if (!raw || typeof raw !== 'string') return '';
+
+      // Escape raw HTML tags to prevent XSS before parsing markdown
+      const sanitized = raw
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      // 1. Prefer marked.js if available
+      if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+        try {
+          return marked.parse(sanitized, {
+            breaks: true,
+            gfm: true
+          });
+        } catch (e) {
+          console.warn('marked.parse error, using fallback:', e);
+        }
+      }
+
+      // 2. High-fidelity built-in fallback parser
+      let html = sanitized;
+
+      // Code blocks (```code```)
+      const codeBlocks = [];
+      html = html.replace(/```(?:[a-zA-Z0-9_-]+)?\n?([\s\S]*?)```/g, (match, code) => {
+        const id = '___CODEBLOCK_' + codeBlocks.length + '___';
+        codeBlocks.push('<pre><code>' + code.trim() + '</code></pre>');
+        return id;
+      });
+
+      // Inline code (`code`)
+      const inlineCodes = [];
+      html = html.replace(/`([^`\n]+)`/g, (match, code) => {
+        const id = '___INLINECODE_' + inlineCodes.length + '___';
+        inlineCodes.push('<code>' + code + '</code>');
+        return id;
+      });
+
+      // Headers (###, ##, #)
+      html = html.replace(/^### (.*$)/gim, '<h4>$1</h4>');
+      html = html.replace(/^## (.*$)/gim, '<h3>$1</h3>');
+      html = html.replace(/^# (.*$)/gim, '<h2>$1</h2>');
+
+      // Bold & Italic: **bold**, *italic*, __bold__, _italic_
+      html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+      html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+      html = html.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+
+      // Blockquotes (> quote)
+      html = html.replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>');
+
+      // Lists: numbered (1. ) and bullets (- or * )
+      const lines = html.split('\n');
+      const formatted = [];
+      let inOl = false;
+      let inUl = false;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const olMatch = line.match(/^\s*(\d+)\.\s+(.*)$/);
+        const ulMatch = line.match(/^\s*[\-\*]\s+(.*)$/);
+
+        if (olMatch) {
+          if (inUl) { formatted.push('</ul>'); inUl = false; }
+          if (!inOl) { formatted.push('<ol>'); inOl = true; }
+          formatted.push('<li>' + olMatch[2] + '</li>');
+        } else if (ulMatch) {
+          if (inOl) { formatted.push('</ol>'); inOl = false; }
+          if (!inUl) { formatted.push('<ul>'); inUl = true; }
+          formatted.push('<li>' + ulMatch[1] + '</li>');
+        } else {
+          // If empty line between list items, don't break list immediately if next line is item
+          if (!line.trim() && (inOl || inUl)) {
+            const next = lines[i + 1];
+            if (next && (next.match(/^\s*(\d+)\.\s+/) || next.match(/^\s*[\-\*]\s+/))) {
+              continue;
+            }
+          }
+          if (inOl) { formatted.push('</ol>'); inOl = false; }
+          if (inUl) { formatted.push('</ul>'); inUl = false; }
+          formatted.push(line);
+        }
+      }
+      if (inOl) formatted.push('</ol>');
+      if (inUl) formatted.push('</ul>');
+      html = formatted.join('\n');
+
+      // Paragraphs
+      const paras = html.split(/\n{2,}/);
+      html = paras.map(p => {
+        const trimmed = p.trim();
+        if (!trimmed) return '';
+        if (/^<(h[1-6]|ol|ul|pre|blockquote)/i.test(trimmed)) {
+          return trimmed;
+        }
+        return '<p>' + trimmed.replace(/\n/g, '<br/>') + '</p>';
+      }).filter(Boolean).join('\n');
+
+      // Restore code
+      codeBlocks.forEach((block, idx) => {
+        html = html.replace('___CODEBLOCK_' + idx + '___', block);
+      });
+      inlineCodes.forEach((code, idx) => {
+        html = html.replace('___INLINECODE_' + idx + '___', code);
+      });
+
+      return html;
+    }
+
     function appendMessage(sender, text) {
       const history = document.getElementById('chatHistory');
       const bubble = document.createElement('div');
       bubble.className = 'assistant-bubble ' + (sender === 'user' ? 'bubble-user' : 'bubble-assistant');
-      bubble.style.whiteSpace = 'pre-line';
-      bubble.textContent = text;
+      if (sender === 'user') {
+        bubble.textContent = text;
+      } else {
+        bubble.innerHTML = renderMarkdown(text);
+      }
       history.appendChild(bubble);
       history.scrollTop = history.scrollHeight;
       return bubble;
