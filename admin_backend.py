@@ -179,6 +179,20 @@ def _init_db(path: str) -> sqlite3.Connection:
             ("general", "DAVAI Academic Assistant", "You are DAVAI, a helpful academic study assistant for high school and university students. Help with any subject, explain concepts clearly, assist with study techniques, and support student learning.")
         ])
 
+    # Seed default AI configuration if empty
+    has_ai = con.execute("SELECT COUNT(*) as n FROM ai_config WHERE key='api_key'").fetchone()["n"]
+    if has_ai == 0:
+        con.executemany("INSERT OR REPLACE INTO ai_config (key, value) VALUES (?, ?)", [
+            ("api_key",      "sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx"),
+            ("base_url",     "https://cachyapi.octotech.az/v1"),
+            ("active_model", "claude-sonnet-5"),
+            ("max_tokens",   "800"),
+            ("free_limit",   "15"),
+            ("pro_limit",    "60"),
+            ("promax_limit", "150"),
+            ("hourly_limit", "20"),
+        ])
+
     # Seed sample students, homework, payments, announcements if empty
     has_u = con.execute("SELECT COUNT(*) as n FROM users").fetchone()["n"]
     if has_u == 0:
@@ -888,8 +902,8 @@ def _announcement_delete(aid):
 # ── AI Config Handlers ────────────────────────────────────────────────────────
 
 AI_DEFAULTS = {
-    "base_url":      "https://app.claude.gg/v1",
-    "active_model":  "claude-sonnet-4-5",
+    "base_url":      "https://cachyapi.octotech.az/v1",
+    "active_model":  "claude-sonnet-5",
     "max_tokens":    "800",
     "free_limit":    "15",
     "pro_limit":     "60",
@@ -912,12 +926,12 @@ def _ai_config_get():
         "promax_limit":  int(cfg.get("promax_limit", AI_DEFAULTS["promax_limit"])),
         "hourly_limit":  int(cfg.get("hourly_limit", AI_DEFAULTS["hourly_limit"])),
         "models": [
-            {"id": "claude-haiku-5-5",    "label": "Claude Haiku 5.5 — fast, light"},
-            {"id": "claude-sonnet-4-5",   "label": "Claude Sonnet 4.5 — recommended"},
-            {"id": "claude-sonnet-4-6",   "label": "Claude Sonnet 4.6 — latest"},
+            {"id": "claude-sonnet-5",     "label": "Claude Sonnet 5 — recommended"},
             {"id": "claude-sonnet-5-5",   "label": "Claude Sonnet 5.5 — deep thinking"},
             {"id": "claude-opus-5-5",     "label": "Claude Opus 5.5 — most powerful"},
-            {"id": "claude-fable-5-1",    "label": "Claude Fable 5.1 — creative"},
+            {"id": "claude-fable-5.2",    "label": "Claude Fable 5.2 — creative"},
+            {"id": "claude-sonnet-4-6",   "label": "Claude Sonnet 4.6 — balanced"},
+            {"id": "claude-haiku-5-5",    "label": "Claude Haiku 5.5 — fastest"},
         ],
     }
 

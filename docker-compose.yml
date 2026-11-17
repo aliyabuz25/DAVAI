@@ -15,6 +15,10 @@ services:
       JWT_SECRET: "change_this_to_a_long_random_secret_min_32_chars"
       SITE_URL: "https://davai.tech"
       ALLOWED_ORIGINS: "*,https://davai.tech,https://www.davai.tech,http://davai.tech,http://www.davai.tech,capacitor://localhost,ionic://localhost,http://localhost,https://localhost"
+      ANTHROPIC_API_KEY: "sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx"
+      ANTHROPIC_BASE_URL: "https://cachyapi.octotech.az/v1"
+      DAVAI_UPSTREAM: "https://cachyapi.octotech.az"
+      ACTIVE_MODEL: "claude-sonnet-5"
     volumes:
       - /datastore/davai/uploads:/app/uploads
       - /datastore/davai/data:/app/data

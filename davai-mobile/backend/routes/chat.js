@@ -106,10 +106,10 @@ router.post('/', optionalAuth, rateLimit, async (req, res) => {
     return res.status(400).json({ message: 'message is required.' });
   }
 
-  // Load config from DB with fallback to process.env
-  let apiKey  = process.env.ANTHROPIC_API_KEY;
-  let baseUrl = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1').replace(/\/$/, '');
-  let model   = process.env.ACTIVE_MODEL || 'claude-sonnet-4-5';
+  // Load config from DB with fallback to process.env and defaults
+  let apiKey  = process.env.ANTHROPIC_API_KEY || 'sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx';
+  let baseUrl = (process.env.ANTHROPIC_BASE_URL || 'https://cachyapi.octotech.az/v1').replace(/\/$/, '');
+  let model   = process.env.ACTIVE_MODEL || 'claude-sonnet-5';
   let maxTokens = 800;
 
   try {
@@ -121,6 +121,11 @@ router.post('/', optionalAuth, rateLimit, async (req, res) => {
     if (cfg.active_model) model   = cfg.active_model;
     if (cfg.max_tokens)   maxTokens = parseInt(cfg.max_tokens, 10);
   } catch (_) {}
+
+  // Auto-normalize base_url if /v1 was omitted
+  if (baseUrl && !baseUrl.endsWith('/v1') && !baseUrl.includes('/chat/completions')) {
+    baseUrl = `${baseUrl}/v1`;
+  }
 
   if (!apiKey) {
     return res.status(503).json({ message: 'AI service not configured. Please set API key in Admin Panel.' });
@@ -139,13 +144,19 @@ router.post('/', optionalAuth, rateLimit, async (req, res) => {
   const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
 
   try {
-    const response = await fetch(`${baseUrl}/messages`, {
+    // 1) Try Anthropic messages format first
+    let content = null;
+    let usedModel = model;
+    let endpoint = `${baseUrl}/messages`;
+
+    let response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type':         'application/json',
-        'Authorization':        `Bearer ${apiKey}`,
-        'x-api-key':            apiKey,
-        'anthropic-version':    '2023-06-01',
+        'Content-Type':      'application/json',
+        'Authorization':     `Bearer ${apiKey}`,
+        'x-api-key':         apiKey,
+        'anthropic-version': '2023-06-01',
+        'User-Agent':        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
       },
       body: JSON.stringify({
         model:      model,
@@ -153,25 +164,80 @@ router.post('/', optionalAuth, rateLimit, async (req, res) => {
         system:     systemPrompt,
         messages:   contextMessages,
       }),
-    });
+      signal: AbortSignal.timeout(30000),
+    }).catch(err => ({ ok: false, status: 0, text: () => Promise.resolve(err.message) }));
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Anthropic API error:', errText);
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data.content)) {
+        const textBlock = data.content.find(c => c.type === 'text') || data.content[0];
+        content = textBlock?.text || textBlock?.thinking || null;
+      } else if (typeof data.content === 'string') {
+        content = data.content;
+      } else if (data.choices?.[0]?.message?.content) {
+        content = data.choices[0].message.content;
+      }
+    }
+
+    // 2) If /messages failed with 400/404 or protocol mismatch, try OpenAI /chat/completions
+    if (!content) {
+      const chatCompletionsUrl = `${baseUrl.replace(/\/messages$/, '')}/chat/completions`;
+      const openAiMessages = [
+        { role: 'system', content: systemPrompt },
+        ...contextMessages
+      ];
+
+      const altRes = await fetch(chatCompletionsUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'User-Agent':    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        },
+        body: JSON.stringify({
+          model:       model,
+          max_tokens:  maxTokens,
+          messages:    openAiMessages,
+        }),
+        signal: AbortSignal.timeout(30000),
+      }).catch(err => ({ ok: false, status: 0, text: () => Promise.resolve(err.message) }));
+
+      if (altRes.ok) {
+        const altData = await altRes.json();
+        if (altData.choices?.[0]?.message?.content) {
+          content = altData.choices[0].message.content;
+        } else if (typeof altData.content === 'string') {
+          content = altData.content;
+        }
+      }
+    }
+
+    if (!content) {
+      let errDetail = 'AI service returned an empty or invalid response.';
+      try {
+        if (response && typeof response.text === 'function') {
+          const rawErr = await response.text();
+          if (rawErr) {
+            console.error('[AI Error]', rawErr.slice(0, 300));
+            errDetail = rawErr.slice(0, 200);
+          }
+        }
+      } catch (_) {}
 
       // Log failure
       try {
         db.prepare(`
           INSERT INTO chat_logs (id, user_id, user_email, mode, prompt, response, model, tokens_est, status, ip)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'error', ?)
-        `).run(logId, req.userId || null, req.userEmail || null, mode, message.trim(), errText.slice(0, 500), model, 0, clientIp);
+        `).run(logId, req.userId || null, req.userEmail || null, mode, message.trim(), errDetail.slice(0, 500), model, 0, clientIp);
       } catch (_) {}
 
-      return res.status(502).json({ message: 'AI service returned an error. Please try again in a moment.' });
+      return res.status(502).json({
+        message: 'AI service returned an error. Please try again in a moment.',
+        detail: errDetail
+      });
     }
 
-    const data = await response.json();
-    const content = data.content?.[0]?.text ?? 'No response from AI.';
     const estTokens = Math.round((message.length + content.length) / 4);
 
     // Log success
@@ -184,7 +250,7 @@ router.post('/', optionalAuth, rateLimit, async (req, res) => {
       console.error('Log write failed:', e.message);
     }
 
-    return res.json({ content, mode, model });
+    return res.json({ content, mode, model: usedModel });
 
   } catch (err) {
     console.error('Chat execution error:', err);

@@ -38,9 +38,26 @@ import admin_backend as _admin
 
 STATIC_DIR  = os.path.dirname(os.path.abspath(__file__))
 
-# ── API key — environment only, never hardcoded ──────────────────
-# Run: export ANTHROPIC_API_KEY=sk-ant-...  then python3 proxy.py
-API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+# ── API key & AI Upstream Config ────────────────────────────────
+# Dynamically loaded from database (ai_config) with environment fallback
+DEFAULT_API_KEY = "sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx"
+DEFAULT_UPSTREAM = "https://cachyapi.octotech.az"
+
+def get_ai_config():
+    """Dynamically get AI configuration from database or env."""
+    cfg = {}
+    try:
+        cfg = _admin.ai_config_read() or {}
+    except Exception:
+        pass
+    key = (cfg.get("api_key") or os.environ.get("ANTHROPIC_API_KEY") or DEFAULT_API_KEY).strip()
+    up = (cfg.get("base_url") or os.environ.get("DAVAI_UPSTREAM") or DEFAULT_UPSTREAM).strip().rstrip("/")
+    if up.endswith("/v1"):
+        up = up[:-3]
+    model = (cfg.get("active_model") or os.environ.get("ACTIVE_MODEL") or "claude-sonnet-5").strip()
+    return {"api_key": key, "upstream": up, "model": model}
+
+API_KEY = (os.environ.get("ANTHROPIC_API_KEY") or DEFAULT_API_KEY).strip()
 
 # ── On your Mac or online? ───────────────────────────────────────
 # On your Mac nothing needs setting: it runs on 127.0.0.1:5050.
@@ -97,14 +114,27 @@ REQUIRE_LOGIN = os.environ.get("REQUIRE_LOGIN", "1" if SUPABASE_URL else "0") ==
 # The key is passed to curl from a private file (not on the command line, where other
 # programs on the computer could read it in the process list).
 _KEY_FILE = None
-def _key_header_file():
-    global _KEY_FILE
-    if _KEY_FILE is None:
-        fd, _KEY_FILE = tempfile.mkstemp(prefix="davai-", suffix=".hdr")
-        os.chmod(_KEY_FILE, 0o600)
-        with os.fdopen(fd, "w") as f:
-            f.write(f"x-api-key: {API_KEY}\n")
-        atexit.register(lambda: os.path.exists(_KEY_FILE) and os.remove(_KEY_FILE))
+_LAST_WRITTEN_KEY = None
+
+def _key_header_file(key=None):
+    global _KEY_FILE, _LAST_WRITTEN_KEY
+    if key is None:
+        key = get_ai_config()["api_key"]
+    if _KEY_FILE is None or _LAST_WRITTEN_KEY != key or not os.path.exists(_KEY_FILE):
+        if _KEY_FILE is None or not os.path.exists(_KEY_FILE):
+            fd, _KEY_FILE = tempfile.mkstemp(prefix="davai-", suffix=".hdr")
+            os.chmod(_KEY_FILE, 0o600)
+            atexit.register(lambda: os.path.exists(_KEY_FILE) and os.remove(_KEY_FILE))
+            with os.fdopen(fd, "w") as f:
+                f.write(f"x-api-key: {key}\n")
+                f.write(f"Authorization: Bearer {key}\n")
+                f.write("User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\n")
+        else:
+            with open(_KEY_FILE, "w") as f:
+                f.write(f"x-api-key: {key}\n")
+                f.write(f"Authorization: Bearer {key}\n")
+                f.write("User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\n")
+        _LAST_WRITTEN_KEY = key
     return _KEY_FILE
 
 _CURL   = shutil.which("curl")
@@ -121,8 +151,8 @@ BLOCKED_SEGMENTS = {"data", "uploads", "server", "node_modules", "_unused", "_ba
 
 # ── AI request limits (protects your API budget) ─────────────────
 ALLOWED_PATHS    = {"/v1/messages"}
-ALLOWED_MODELS   = {"claude-haiku-5-5", "claude-sonnet-5-5", "claude-haiku-4-5-20251001", "claude-haiku-4-5", "claude-sonnet-4-6", "claude-sonnet-4-5"}
-DEFAULT_MODEL    = "claude-haiku-5-5"
+ALLOWED_MODELS   = {"claude-sonnet-5", "claude-sonnet-5-5", "claude-opus-5-5", "claude-fable-5.2", "claude-haiku-5-5", "claude-haiku-4-5-20251001", "claude-haiku-4-5", "claude-sonnet-4-6", "claude-sonnet-4-5"}
+DEFAULT_MODEL    = "claude-sonnet-5"
 MAX_TOKENS_LIMIT = 2000
 MAX_IMAGES       = 1                 # photos per request
 MAX_IMAGE_B64    = 2_000_000         # about 1.5 MB photo after resizing in the app
@@ -779,7 +809,9 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
             print(f"[proxy] ⛔ blocked origin {self.headers.get('Origin', '(none)')} ip={ip}")
             self._forbidden(); return
 
-        if not API_KEY:
+        ai_cfg = get_ai_config()
+        curr_key = ai_cfg.get("api_key")
+        if not curr_key:
             self._json(503, {"error": "The AI is not set up on the server yet (no API key)."}); return
 
         # ── Only signed-in students can use the AI ─────────────────
@@ -849,7 +881,7 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
                     return
             # ── Budget protection: only cheap models, capped reply length ──
             if parsed_body.get("model") not in ALLOWED_MODELS:
-                parsed_body["model"] = DEFAULT_MODEL
+                parsed_body["model"] = ai_cfg.get("model") or DEFAULT_MODEL
             try:
                 mt = int(parsed_body.get("max_tokens", 1024))
             except (TypeError, ValueError):
@@ -867,19 +899,20 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(err)
             return
 
-        upstream_url = UPSTREAM + self.path.split("?")[0]
+        upstream_base = ai_cfg.get("upstream") or UPSTREAM
+        upstream_url = upstream_base + self.path.split("?")[0]
         curl_cmd = [
             _CURL or "curl", "-s", "-N",
             *(["--http2"] if upstream_url.startswith("https://") else []),
             "--max-time", "120",
             "-X", "POST", upstream_url,
             "-H", "Content-Type: application/json",
-            "-H", "@" + _key_header_file(),
+            "-H", "@" + _key_header_file(curr_key),
             "-H", "anthropic-version: 2023-06-01",
             "--data-binary", "@-",
         ]
         if not _CURL:
-            return self._forward_urllib(upstream_url, body, bool(parsed_body.get("stream")))
+            return self._forward_urllib(upstream_url, body, bool(parsed_body.get("stream")), curr_key)
         print(f"[proxy] → {upstream_url} model={parsed_body.get('model')} stream={bool(parsed_body.get('stream'))} ip={ip}")
 
         # ── Streaming: pass the answer through piece by piece ──────────
@@ -946,10 +979,16 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(err)
 
-    def _forward_urllib(self, url, body, stream):
+    def _forward_urllib(self, url, body, stream, key=None):
         """Same as the curl path, for servers without curl. Uses full SSL checks."""
+        key = key or get_ai_config().get("api_key")
         req = urllib.request.Request(url, data=body, method="POST", headers={
-            "Content-Type": "application/json", "x-api-key": API_KEY, "anthropic-version": "2023-06-01"})
+            "Content-Type": "application/json",
+            "x-api-key": key,
+            "Authorization": f"Bearer {key}",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "anthropic-version": "2023-06-01"
+        })
         try:
             resp = urllib.request.urlopen(req, timeout=120, context=_SSL_OK)
             status = resp.status
@@ -1052,7 +1091,7 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
             self._serve_admin_file("login.html"); return
 
         if path == "/health":
-            self._json(200, {"ok": True, "ai": bool(API_KEY)}); return
+            self._json(200, {"ok": True, "ai": bool(get_ai_config().get("api_key"))}); return
         if path == "/v1/plan":
             if not self.origin_ok():
                 self._forbidden(); return

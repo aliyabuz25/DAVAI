@@ -914,39 +914,7 @@
 
   <!-- Comprehensive Study Assistant & Interactive Scripts -->
   <script>
-    const AI_PROXY_URL = '/v1/messages';
-
-    // Comprehensive Academic Knowledge Base (Handles offline or instant responses)
-    const KNOWLEDGE_BASE = [
-      {
-        match: /tok|theory of knowledge|essay structure/i,
-        answer: "TOK Essay Structure (1,600 words max):\n\n1. Introduction (~150 words): Unpack the prescribed title, clarify key terms in context, identify the Knowledge Question, and provide a clear thesis roadmap.\n2. Area of Knowledge 1 (~600 words): First perspective with real-world situation evidence, followed by counter-claim and evaluation.\n3. Area of Knowledge 2 (~600 words): Contrasting AoK with evidence, counter-perspective, and comparative evaluation.\n4. Conclusion (~200 words): Synthesize insights, address implications of your thesis, and state limitations."
-      },
-      {
-        match: /criteria|rubric|examiner/i,
-        answer: "Official Assessment Criteria Overview:\n\n• TOK Essay: Criterion A (Focus on Knowledge Questions - 4 pts), Criterion B (Quality of Analysis & Real-World Examples - 6 pts).\n• IELTS Writing Task 2: Task Achievement (25%), Coherence and Cohesion (25%), Lexical Resource (25%), Grammatical Range and Accuracy (25%).\n• Extended Essay: Focus & Method (Criterion A), Knowledge & Understanding (Criterion B), Critical Thinking (Criterion C), Presentation (Criterion D), Engagement (Criterion E - RPPF form)."
-      },
-      {
-        match: /ielts|band 7|task 2|writing task/i,
-        answer: "Key distinctions for IELTS Band 7+ in Writing Task 2:\n\n• Task Response: Present a clear, developed position from introduction to conclusion without self-contradiction.\n• Cohesion: Maintain clear paragraph progression with logical referents rather than overusing formulaic transition markers.\n• Lexical Resource: Accurate use of academic collocations with minimal precision errors.\n• Grammatical Accuracy: A mix of complex sentences with high clause accuracy."
-      },
-      {
-        match: /extended essay|ee|research question/i,
-        answer: "Effective Extended Essay research questions must be focused, analytical, and manageable within 4,000 words:\n\n• Avoid purely descriptive questions ('What was the impact of X?').\n• Formulate evaluative questions ('To what extent did factor X influence outcome Y within period Z?').\n• Ensure accessibility of primary and reputable secondary sources."
-      },
-      {
-        match: /collocation|vocabulary|academic|words/i,
-        answer: "Recommended academic collocations for analytical writing:\n\n1. Substantiate an argument (provide empirical support)\n2. Reconcile conflicting perspectives (address theoretical tension)\n3. Inherent constraint (methodological limitation)\n4. Disproportionate impact (unequal outcome distribution)\n5. Far-reaching implications (broader theoretical consequence)"
-      },
-      {
-        match: /ia|internal assessment|math|physics|biology|chemistry/i,
-        answer: "Internal Assessment (IA) Success Checklist:\n\n• Personal Engagement: Explain why you chose this investigation without fabricating elaborate stories.\n• Exploration: Well-defined methodology, controlled variables, and thorough safety/ethics review.\n• Analysis: Raw data table, processed data, uncertainty propagation, and appropriate graphing.\n• Evaluation: Discuss realistic methodological weaknesses and suggest verifiable improvements."
-      },
-      {
-        match: /schedule|study plan|revision|time/i,
-        answer: "Recommended Study Block Protocol:\n\n• Focus Interval: 50 minutes deep study + 10 minutes screen-free break.\n• Priority Order: High-cognitive analytical writing (TOK/EE) first, followed by practice problems, ending with flashcards/vocabulary.\n• Tracker: You can add and monitor your deadlines in the Student App (/app)."
-      }
-    ];
+    let conversationHistory = [];
 
     function closeNav() {
       const navCollapse = document.getElementById('mainNav');
@@ -968,6 +936,7 @@
     }
 
     function clearChat() {
+      conversationHistory = [];
       const history = document.getElementById('chatHistory');
       history.innerHTML = `
         <div class="assistant-bubble bubble-assistant">
@@ -988,6 +957,77 @@
       return bubble;
     }
 
+    async function callDavaiAI(question, history) {
+      // Prioritize local/relative endpoints, followed by production davai.tech
+      const isDavaiTech = window.location.hostname === 'davai.tech' || window.location.hostname.endsWith('.davai.tech');
+      const candidates = [
+        { url: '/chat', type: 'chat' },
+        { url: '/v1/messages', type: 'messages' },
+      ];
+      if (!isDavaiTech) {
+        candidates.push({ url: 'https://davai.tech/chat', type: 'chat' });
+        candidates.push({ url: 'https://davai.tech/v1/messages', type: 'messages' });
+      }
+
+      for (const target of candidates) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 35000);
+
+          let reqBody;
+          if (target.type === 'chat') {
+            reqBody = JSON.stringify({
+              message: question,
+              mode: 'general',
+              history: history.slice(-8)
+            });
+          } else {
+            reqBody = JSON.stringify({
+              model: 'claude-sonnet-5',
+              max_tokens: 800,
+              system: 'You are DAVAI, an academic mentor for IB Diploma and IELTS students. Provide structured, criteria-aligned guidance. Maintain an objective, educational tone.',
+              messages: [
+                ...history.slice(-4).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
+                { role: 'user', content: question }
+              ]
+            });
+          }
+
+          const res = await fetch(target.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: reqBody,
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const data = await res.json();
+            let text = null;
+            if (Array.isArray(data.content)) {
+              const textObj = data.content.find(c => c.type === 'text') || data.content[0];
+              text = textObj?.text || textObj?.thinking || null;
+            } else if (typeof data.content === 'string') {
+              text = data.content;
+            } else if (data.reply) {
+              text = data.reply;
+            } else if (data.choices?.[0]?.message?.content) {
+              text = data.choices[0].message.content;
+            }
+            if (text && typeof text === 'string' && text.trim()) {
+              return text.trim();
+            }
+          }
+        } catch (_) {
+          // If this candidate times out or errors, try next
+        }
+      }
+      return null;
+    }
+
     async function submitQuestion(questionText) {
       const q = questionText.trim();
       if (!q) return;
@@ -1000,44 +1040,19 @@
       input.disabled = true;
       btn.disabled = true;
 
-      const loadingMsg = appendMessage('ai', 'Evaluating criteria...');
+      const loadingMsg = appendMessage('ai', 'DAVAI is thinking...');
 
-      let responseText = null;
-
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000);
-
-        const res = await fetch(AI_PROXY_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-haiku-5-5',
-            max_tokens: 350,
-            system: 'You are DAVAI, an academic mentor for IB Diploma and IELTS students. Provide structured, criteria-aligned guidance. Do not write full student essays. Maintain an objective, educational tone.',
-            messages: [{ role: 'user', content: q }]
-          }),
-          signal: controller.signal
-        });
-
-        clearTimeout(timeout);
-
-        if (res.ok) {
-          const data = await res.json();
-          responseText = data?.content?.[0]?.text || null;
-        }
-      } catch (err) {}
-
+      const responseText = await callDavaiAI(q, conversationHistory);
       loadingMsg.remove();
 
-      if (!responseText) {
-        const match = KNOWLEDGE_BASE.find(item => item.match.test(q));
-        responseText = match 
-          ? match.answer 
-          : "For this topic, examine your official syllabus criteria guide and break down your argument into clear premises with empirical evidence.\n\nYou can also launch the Student App (/app) to record this milestone in your homework manager.";
+      if (responseText) {
+        conversationHistory.push({ role: 'user', content: q });
+        conversationHistory.push({ role: 'assistant', content: responseText });
+        appendMessage('ai', responseText);
+      } else {
+        appendMessage('ai', 'Could not reach DAVAI AI service. Please check your internet connection and try again.');
       }
 
-      appendMessage('ai', responseText);
       input.disabled = false;
       btn.disabled = false;
       input.focus();
