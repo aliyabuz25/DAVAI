@@ -109,7 +109,7 @@ router.post('/', optionalAuth, rateLimit, async (req, res) => {
   // Load config from DB with fallback to process.env and defaults
   let apiKey  = process.env.ANTHROPIC_API_KEY || 'sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx';
   let baseUrl = (process.env.ANTHROPIC_BASE_URL || 'https://cachyapi.octotech.az/v1').replace(/\/$/, '');
-  let model   = reqModel || process.env.ACTIVE_MODEL || 'claude-sonnet-5-5';
+  let model   = reqModel || process.env.ACTIVE_MODEL || 'davai';
   let maxTokens = 800;
 
   try {

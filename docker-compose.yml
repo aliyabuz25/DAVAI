@@ -18,7 +18,7 @@ services:
       ANTHROPIC_API_KEY: "sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx"
       ANTHROPIC_BASE_URL: "https://cachyapi.octotech.az/v1"
       DAVAI_UPSTREAM: "https://cachyapi.octotech.az"
-      ACTIVE_MODEL: "claude-sonnet-5-5"
+      ACTIVE_MODEL: "davai"
     volumes:
       - /datastore/davai/uploads:/app/uploads
       - /datastore/davai/data:/app/data

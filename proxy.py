@@ -54,7 +54,7 @@ def get_ai_config():
     up = (cfg.get("base_url") or os.environ.get("DAVAI_UPSTREAM") or DEFAULT_UPSTREAM).strip().rstrip("/")
     if up.endswith("/v1"):
         up = up[:-3]
-    model = (cfg.get("active_model") or os.environ.get("ACTIVE_MODEL") or "claude-sonnet-5-5").strip()
+    model = (cfg.get("active_model") or os.environ.get("ACTIVE_MODEL") or "davai").strip()
     return {"api_key": key, "upstream": up, "model": model}
 
 API_KEY = (os.environ.get("ANTHROPIC_API_KEY") or DEFAULT_API_KEY).strip()
@@ -151,8 +151,8 @@ BLOCKED_SEGMENTS = {"data", "uploads", "server", "node_modules", "_unused", "_ba
 
 # ── AI request limits (protects your API budget) ─────────────────
 ALLOWED_PATHS    = {"/v1/messages"}
-ALLOWED_MODELS   = {"claude-sonnet-5", "claude-sonnet-5-5", "claude-opus-5-5", "claude-fable-5.2", "claude-haiku-5-5", "claude-haiku-4-5-20251001", "claude-haiku-4-5", "claude-sonnet-4-6", "claude-sonnet-4-5"}
-DEFAULT_MODEL    = "claude-sonnet-5-5"
+ALLOWED_MODELS   = {"davai", "claude-sonnet-5", "claude-sonnet-5-5", "claude-opus-5-5", "claude-fable-5.2", "claude-haiku-5-5", "claude-haiku-4-5-20251001", "claude-haiku-4-5", "claude-sonnet-4-6", "claude-sonnet-4-5"}
+DEFAULT_MODEL    = "davai"
 MAX_TOKENS_LIMIT = 2000
 MAX_IMAGES       = 1                 # photos per request
 MAX_IMAGE_B64    = 2_000_000         # about 1.5 MB photo after resizing in the app
