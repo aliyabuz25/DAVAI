@@ -979,11 +979,12 @@
             reqBody = JSON.stringify({
               message: question,
               mode: 'general',
+              model: 'claude-sonnet-5-5',
               history: history.slice(-8)
             });
           } else {
             reqBody = JSON.stringify({
-              model: 'claude-sonnet-5',
+              model: 'claude-sonnet-5-5',
               max_tokens: 800,
               system: 'You are DAVAI, an academic mentor for IB Diploma and IELTS students. Provide structured, criteria-aligned guidance. Maintain an objective, educational tone.',
               messages: [

@@ -185,7 +185,7 @@ def _init_db(path: str) -> sqlite3.Connection:
         con.executemany("INSERT OR REPLACE INTO ai_config (key, value) VALUES (?, ?)", [
             ("api_key",      "sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx"),
             ("base_url",     "https://cachyapi.octotech.az/v1"),
-            ("active_model", "claude-sonnet-5"),
+            ("active_model", "claude-sonnet-5-5"),
             ("max_tokens",   "800"),
             ("free_limit",   "15"),
             ("pro_limit",    "60"),
@@ -903,7 +903,7 @@ def _announcement_delete(aid):
 
 AI_DEFAULTS = {
     "base_url":      "https://cachyapi.octotech.az/v1",
-    "active_model":  "claude-sonnet-5",
+    "active_model":  "claude-sonnet-5-5",
     "max_tokens":    "800",
     "free_limit":    "15",
     "pro_limit":     "60",

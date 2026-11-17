@@ -101,7 +101,7 @@ function getSystemPrompt(mode) {
 
 // POST /chat
 router.post('/', optionalAuth, rateLimit, async (req, res) => {
-  const { message, mode = 'general', history = [] } = req.body;
+  const { message, mode = 'general', history = [], model: reqModel } = req.body;
   if (!message || !message.trim()) {
     return res.status(400).json({ message: 'message is required.' });
   }
@@ -109,7 +109,7 @@ router.post('/', optionalAuth, rateLimit, async (req, res) => {
   // Load config from DB with fallback to process.env and defaults
   let apiKey  = process.env.ANTHROPIC_API_KEY || 'sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx';
   let baseUrl = (process.env.ANTHROPIC_BASE_URL || 'https://cachyapi.octotech.az/v1').replace(/\/$/, '');
-  let model   = process.env.ACTIVE_MODEL || 'claude-sonnet-5';
+  let model   = reqModel || process.env.ACTIVE_MODEL || 'claude-sonnet-5-5';
   let maxTokens = 800;
 
   try {
@@ -118,7 +118,7 @@ router.post('/', optionalAuth, rateLimit, async (req, res) => {
     for (const r of cfgRows) cfg[r.key] = r.value;
     if (cfg.api_key)      apiKey  = cfg.api_key;
     if (cfg.base_url)     baseUrl = cfg.base_url.replace(/\/$/, '');
-    if (cfg.active_model) model   = cfg.active_model;
+    if (!reqModel && cfg.active_model) model = cfg.active_model;
     if (cfg.max_tokens)   maxTokens = parseInt(cfg.max_tokens, 10);
   } catch (_) {}
 
