@@ -1381,7 +1381,7 @@ async function loadSettings() {
   const d = await res.json();
 
   document.getElementById('ai-base-url').value     = d.base_url || '';
-  document.getElementById('ai-max-tokens').value   = d.max_tokens || 800;
+  document.getElementById('ai-max-tokens').value   = d.max_tokens || 3000;
   document.getElementById('ai-free-limit').value   = d.free_limit || 15;
   document.getElementById('ai-pro-limit').value    = d.pro_limit || 60;
   document.getElementById('ai-promax-limit').value = d.promax_limit || 150;

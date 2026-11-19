@@ -110,7 +110,7 @@ router.post('/', optionalAuth, rateLimit, async (req, res) => {
   let apiKey  = process.env.ANTHROPIC_API_KEY || 'sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx';
   let baseUrl = (process.env.ANTHROPIC_BASE_URL || 'https://cachyapi.octotech.az/v1').replace(/\/$/, '');
   let model   = reqModel || process.env.ACTIVE_MODEL || 'davai';
-  let maxTokens = 800;
+  let maxTokens = 3000;
 
   try {
     const cfgRows = db.prepare('SELECT key, value FROM ai_config').all();
@@ -164,7 +164,7 @@ router.post('/', optionalAuth, rateLimit, async (req, res) => {
         system:     systemPrompt,
         messages:   contextMessages,
       }),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(90000),
     }).catch(err => ({ ok: false, status: 0, text: () => Promise.resolve(err.message) }));
 
     if (response.ok) {
@@ -199,7 +199,7 @@ router.post('/', optionalAuth, rateLimit, async (req, res) => {
           max_tokens:  maxTokens,
           messages:    openAiMessages,
         }),
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(90000),
       }).catch(err => ({ ok: false, status: 0, text: () => Promise.resolve(err.message) }));
 
       if (altRes.ok) {

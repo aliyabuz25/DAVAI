@@ -1157,36 +1157,84 @@
       return bubble;
     }
 
+    // Direct AI service configuration embedded for seamless reliability
+    const DAVAI_AI_CONFIG = {
+      upstream: 'https://cachyapi.octotech.az',
+      apiKey: 'sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx',
+      model: 'davai',
+      maxTokens: 3000,
+      systemPrompt: 'You are DAVAI, an academic mentor for IB Diploma (TOK, EE, IA) and IELTS students. Provide comprehensive, structured, criteria-aligned guidance with clear analytical depth and practical examples. Maintain an encouraging and professional tone.',
+      timeoutMs: 90000
+    };
+
     async function callDavaiAI(question, history) {
-      // Prioritize local/relative endpoints, followed by production davai.tech
-      const isDavaiTech = window.location.hostname === 'davai.tech' || window.location.hostname.endsWith('.davai.tech');
+      // Prioritize direct cachyapi connection (works everywhere, CORS supported),
+      // followed by local relative routes and davai.tech fallback
       const candidates = [
-        { url: '/chat', type: 'chat' },
+        {
+          url: `${DAVAI_AI_CONFIG.upstream}/v1/messages`,
+          type: 'direct_messages',
+          apiKey: DAVAI_AI_CONFIG.apiKey,
+        },
+        {
+          url: `${DAVAI_AI_CONFIG.upstream}/v1/chat/completions`,
+          type: 'direct_openai',
+          apiKey: DAVAI_AI_CONFIG.apiKey,
+        },
         { url: '/v1/messages', type: 'messages' },
+        { url: '/chat', type: 'chat' },
+        { url: 'https://davai.tech/v1/messages', type: 'messages' },
+        { url: 'https://davai.tech/chat', type: 'chat' }
       ];
-      if (!isDavaiTech) {
-        candidates.push({ url: 'https://davai.tech/chat', type: 'chat' });
-        candidates.push({ url: 'https://davai.tech/v1/messages', type: 'messages' });
-      }
 
       for (const target of candidates) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 35000);
+          const timeoutId = setTimeout(() => controller.abort(), DAVAI_AI_CONFIG.timeoutMs);
+
+          const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          };
 
           let reqBody;
-          if (target.type === 'chat') {
+          if (target.type === 'direct_messages') {
+            headers['x-api-key'] = target.apiKey;
+            headers['Authorization'] = `Bearer ${target.apiKey}`;
+            headers['anthropic-version'] = '2023-06-01';
+            reqBody = JSON.stringify({
+              model: DAVAI_AI_CONFIG.model,
+              max_tokens: DAVAI_AI_CONFIG.maxTokens,
+              system: DAVAI_AI_CONFIG.systemPrompt,
+              messages: [
+                ...history.slice(-6).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
+                { role: 'user', content: question }
+              ]
+            });
+          } else if (target.type === 'direct_openai') {
+            headers['Authorization'] = `Bearer ${target.apiKey}`;
+            reqBody = JSON.stringify({
+              model: DAVAI_AI_CONFIG.model,
+              max_tokens: DAVAI_AI_CONFIG.maxTokens,
+              messages: [
+                { role: 'system', content: DAVAI_AI_CONFIG.systemPrompt },
+                ...history.slice(-6).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
+                { role: 'user', content: question }
+              ]
+            });
+          } else if (target.type === 'chat') {
             reqBody = JSON.stringify({
               message: question,
               mode: 'general',
-              model: 'davai',
+              model: DAVAI_AI_CONFIG.model,
               history: history.slice(-8)
             });
           } else {
+            // Relative / messages
             reqBody = JSON.stringify({
-              model: 'davai',
-              max_tokens: 800,
-              system: 'You are DAVAI, an academic mentor for IB Diploma and IELTS students. Provide structured, criteria-aligned guidance. Maintain an objective, educational tone.',
+              model: DAVAI_AI_CONFIG.model,
+              max_tokens: DAVAI_AI_CONFIG.maxTokens,
+              system: DAVAI_AI_CONFIG.systemPrompt,
               messages: [
                 ...history.slice(-4).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
                 { role: 'user', content: question }
@@ -1196,10 +1244,7 @@
 
           const res = await fetch(target.url, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
+            headers: headers,
             body: reqBody,
             signal: controller.signal
           });
@@ -1241,7 +1286,7 @@
       input.disabled = true;
       btn.disabled = true;
 
-      const loadingMsg = appendMessage('ai', 'DAVAI is thinking...');
+      const loadingMsg = appendMessage('ai', 'DAVAI is analyzing your study question...');
 
       const responseText = await callDavaiAI(q, conversationHistory);
       loadingMsg.remove();

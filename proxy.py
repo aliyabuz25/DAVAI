@@ -77,7 +77,7 @@ TRUST_PROXY = os.environ.get("TRUST_PROXY", "1" if ONLINE else "0") == "1"
 
 # The real AI service. DAVAI_UPSTREAM can point to another Anthropic-compatible
 # server (https only), or a local test server.
-UPSTREAM = "https://api.anthropic.com"
+UPSTREAM = "https://cachyapi.octotech.az"
 _up = os.environ.get("DAVAI_UPSTREAM", "").strip().rstrip("/")
 if _up.endswith("/v1"):
     _up = _up[:-3]
@@ -153,7 +153,7 @@ BLOCKED_SEGMENTS = {"data", "uploads", "server", "node_modules", "_unused", "_ba
 ALLOWED_PATHS    = {"/v1/messages"}
 ALLOWED_MODELS   = {"davai", "claude-sonnet-5", "claude-sonnet-5-5", "claude-opus-5-5", "claude-fable-5.2", "claude-haiku-5-5", "claude-haiku-4-5-20251001", "claude-haiku-4-5", "claude-sonnet-4-6", "claude-sonnet-4-5"}
 DEFAULT_MODEL    = "davai"
-MAX_TOKENS_LIMIT = 2000
+MAX_TOKENS_LIMIT = 4096
 MAX_IMAGES       = 1                 # photos per request
 MAX_IMAGE_B64    = 2_000_000         # about 1.5 MB photo after resizing in the app
 
@@ -883,9 +883,9 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
             if parsed_body.get("model") not in ALLOWED_MODELS:
                 parsed_body["model"] = ai_cfg.get("model") or DEFAULT_MODEL
             try:
-                mt = int(parsed_body.get("max_tokens", 1024))
+                mt = int(parsed_body.get("max_tokens", 3000))
             except (TypeError, ValueError):
-                mt = 1024
+                mt = 3000
             parsed_body["max_tokens"] = max(1, min(mt, MAX_TOKENS_LIMIT))
             body = _json.dumps(parsed_body).encode()
         except Exception as e:
@@ -943,7 +943,7 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
 
         # ── Normal (non-streaming) request ─────────────────────────────
         try:
-            result = subprocess.run(curl_cmd, input=body, capture_output=True, timeout=90)
+            result = subprocess.run(curl_cmd, input=body, capture_output=True, timeout=120)
             resp_body = result.stdout
             status = 200
             try:

@@ -124,19 +124,54 @@ export class ChatService {
     const token = this.auth.token();
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(`${environment.apiUrl}/chat`, {
-      method:  'POST',
-      headers,
-      body: JSON.stringify({ message, mode, history }),
-    });
+    try {
+      const res = await fetch(`${environment.apiUrl}/chat`, {
+        method:  'POST',
+        headers,
+        body: JSON.stringify({ message, mode, history }),
+        signal: AbortSignal.timeout(60000),
+      });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `HTTP ${res.status}`);
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.content ?? data.message ?? data.reply;
+        if (text) return text;
+      }
+    } catch (_) {
+      // Fallback to direct cachyapi upstream
     }
 
-    const data = await res.json();
-    return data.content ?? data.message ?? data.reply ?? 'No response.';
+    // Direct fallback to cachyapi upstream
+    const directRes = await fetch('https://cachyapi.octotech.az/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx',
+        'Authorization': 'Bearer sk-LPpuDoKXZsKViOHpwFex2FSDLELlf0xfByDxm1dwL2172fMx',
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'davai',
+        max_tokens: 3000,
+        system: 'You are DAVAI, an academic study assistant and mentor for IB Diploma and IELTS students.',
+        messages: [
+          ...history.slice(-6),
+          { role: 'user', content: message }
+        ]
+      }),
+      signal: AbortSignal.timeout(90000),
+    });
+
+    if (directRes.ok) {
+      const d: any = await directRes.json();
+      if (Array.isArray(d.content)) {
+        const t = d.content.find((c: any) => c.type === 'text') || d.content[0];
+        return t?.text || t?.thinking || 'No response.';
+      }
+      return d.content ?? d.choices?.[0]?.message?.content ?? 'No response.';
+    }
+
+    throw new Error('AI service currently unavailable');
   }
 
   clearHistory(): void {
